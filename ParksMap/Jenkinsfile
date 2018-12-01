@@ -20,13 +20,21 @@ pipeline {
     version = getVersionFromPom("${CONTEXT_DIR}/pom.xml")
     devTag = ${version} - ${BUILD_NUMBER}
     prodTag = ${version}
-    }
   }
   options {
     timeout(time: 20, unit: 'MINUTES')
   }
 
   stages {
+    stage('Variable Check') {
+      steps {
+        echo "MAVEN_SLAVE_IMAGE: ${MAVEN_SLAVE_IMAGE}"
+        echo "mvnCmd: ${mvnCmd}"
+        echo "version: ${version}"
+        echo "devTag: ${devTag}"
+        echo "prodTag: ${prodTag}"
+      }
+    }
     stage('Check Out Source Code') {
       steps {
         git url: ${GIT_SOURCE_URL}, branch: ${GIT_SOURCE_REF}

@@ -19,12 +19,15 @@ cat ../dockerfiles/Dockerfile | oc new-build --dockerfile=- --to=${MAVEN_SLAVE_I
 oc label is ${MAVEN_SLAVE_IMAGE} role=jenkins-slave
 
 # Set up Jenkins with sufficient resources
-oc new-app -f ../templates/jenkins-persistent.yml
+oc rollout status dc jenkins
+if [ "$?" -ne 0 ]; then
+  oc new-app -f ../templates/jenkins-persistent.yml
+fi
 oc rollout status dc jenkins
 
 # Build artifact and image
 CONTEXT_DIR=MLBParks
-APP_NAME="echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]'"
+APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=jboss-eap70-openshift:1.7
 oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
 -e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
@@ -32,7 +35,7 @@ oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
 --name=${APP_NAME}
 
 CONTEXT_DIR=Nationalparks
-APP_NAME="echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]'"
+APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=redhat-openjdk18-openshift:1.2
 oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
 -e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
@@ -40,7 +43,7 @@ oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
 --name=${APP_NAME}
 
 CONTEXT_DIR=ParksMap
-APP_NAME="echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]'"
+APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=redhat-openjdk18-openshift:1.2
 oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
 -e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
