@@ -1,0 +1,192 @@
+kind: Template
+apiVersion: v1
+metadata:
+  annotations:
+    description: The SonarQube OpenShift template
+    tags: sonarqube
+  name: sonarqube
+message: "Login to SonarQube with the default admin user: admin/admin"
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${SERVICE_NAME}
+    labels:
+      app: ${SERVICE_NAME}
+  spec:
+    ports:
+    - name: ${SERVICE_NAME}
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+    selector:
+      app: ${SERVICE_NAME}
+      deploymentconfig: ${SERVICE_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      description: Route for SonarQube's http service.
+    name: ${SERVICE_NAME}
+    labels:
+      app: ${SERVICE_NAME}
+  spec:
+    to:
+      kind: Service
+      name: ${SERVICE_NAME}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${SERVICE_NAME}
+    name: ${SERVICE_NAME}
+  spec:
+    tags:
+    - annotations:
+        description: The SonarQube Docker image
+        tags: ${SERVICE_NAME}
+      from:
+        kind: DockerImage
+        name: ${SONAR_IMAGE}:${SONAR_VERSION}
+      importPolicy: {}
+      name: ${SONAR_VERSION}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: ${SERVICE_NAME}
+      deploymentconfig: ${SERVICE_NAME}
+    name: ${SERVICE_NAME}
+  spec:
+    replicas: 1
+    selector:
+      app: ${SERVICE_NAME}
+      deploymentconfig: ${SERVICE_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/container.sonarqube.image.entrypoint: '["./bin/run.sh"]'
+        creationTimestamp: null
+        labels:
+          app: ${SERVICE_NAME}
+          deploymentconfig: ${SERVICE_NAME}
+      spec:
+        containers:
+        - env:
+          - name: SONARQUBE_JDBC_PASSWORD
+            value: ${POSTGRESQL_PASSWORD}
+          - name: SONARQUBE_JDBC_URL
+            value: jdbc:postgresql://${POSTGRESQL_SERVICE_NAME}/${POSTGRESQL_DATABASE}
+          - name: SONARQUBE_JDBC_USERNAME
+            value: ${POSTGRESQL_USER}
+          image: ' '
+          imagePullPolicy: IfNotPresent
+          name: ${SERVICE_NAME}
+          ports:
+          - containerPort: 9000
+            protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            successThreshold: 1
+            httpGet:
+              port: 9000
+              path: /
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            successThreshold: 1
+            httpGet:
+              port: 9000
+              path: /
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 1
+              memory: 2Gi
+            limits:
+              cpu: ${SONAR_CPU_LIMIT}
+              memory: ${SONAR_MEMORY_LIMIT}
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /opt/sonarqube/data
+            name: ${SERVICE_NAME}-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - name: ${SERVICE_NAME}-data
+          persistentVolumeClaim:
+            claimName: ${SERVICE_NAME}-data
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${SERVICE_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${SERVICE_NAME}:${SONAR_VERSION}
+      type: ImageChange
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${SERVICE_NAME}-data
+    labels:
+      app: ${SERVICE_NAME}
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${SONAR_VOLUME_CAPACITY}
+parameters:
+- displayName: Service Name
+  name: SERVICE_NAME
+  value: "sonarqube"
+- displayName: SonarQube image
+  name: SONAR_IMAGE
+  value: "docker.io/wkulhanek/sonarqube"
+- displayName: SonarQube version
+  name: SONAR_VERSION
+  value: "6.7.5"
+- displayName: SonarQube CPU Limit
+  name: SONAR_CPU_LIMIT
+  value: "2"
+- displayName: SonarQube Memory Limit
+  name: SONAR_MEMORY_LIMIT
+  value: "3Gi"
+- displayName: SonarQube Volume Capacity
+  name: SONAR_VOLUME_CAPACITY
+  value: "1Gi"
+- displayName: PostgreSQL Service Name
+  name: POSTGRESQL_SERVICE_NAME
+  value: "postgresql"
+  required: true
+- displayName: PostgreSQL Username
+  name: POSTGRESQL_USER
+  value: ""
+  required: true
+- displayName: PostgreSQL Password
+  name: POSTGRESQL_PASSWORD
+  value: ""
+  required: true
+- displayName: PostgreSQL Database Name
+  name: POSTGRESQL_DATABASE
+  value: ""
+  required: true

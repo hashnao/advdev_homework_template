@@ -1,26 +1,110 @@
 // Jenkinsfile for MLBParks
-podTemplate(
-  label: "skopeo-pod",
-  cloud: "openshift",
-  inheritFrom: "maven",
-  containers: [
-    containerTemplate(
-      name: "jnlp",
-      image: "docker-registry.default.svc:5000/${GUID}-jenkins/jenkins-slave-appdev",
-      resourceRequestMemory: "1Gi",
-      resourceLimitMemory: "2Gi"
-    )
-  ]
-) {
-  node('skopeo-pod') {
-    echo "GUID: ${GUID}"
-    echo "CLUSTER: ${CLUSTER}"
+pipeline {
+  agent {
+    kubernetes {
+      label ${MAVEN_SLAVE_IMAGE}
+      cloud "openshift"
+      inheritFrom "maven"
+      containerTemplate(
+        name: "jnlp",
+        image: "${MAVEN_SLAVE_IMAGE}",
+        resourceRequestMemory: "1Gi",
+        resourceLimitMemory: "2Gi",
+        resourceRequestCpu: "1",
+        resourceLimitCpu: "2"
+      )
+    }
+  }
+  environment {
+    mvnCmd = "mvn -s ./nexus_settings.xml"
+    version = getVersionFromPom("${CONTEXT_DIR}/pom.xml")
+    devTag = ${version} - ${BUILD_NUMBER}
+    prodTag = ${version}
+    }
+  }
+  options {
+    timeout(time: 20, unit: 'MINUTES')
+  }
 
-    // Your Pipeline Code goes here. Make sure to use the ${GUID} and ${CLUSTER} parameters where appropriate
-    // You need to build the application in directory `MLBParks`.
-    // Also copy "../nexus_settings.xml" to your build directory
-    // and replace 'GUID' in the file with your ${GUID} to point to >your< Nexus instance
- 
+  stages {
+    stage('Check Out Source Code') {
+      steps {
+        git url: ${GIT_SOURCE_URL}, branch: ${GIT_SOURCE_REF}
+        sh "sed -e s/GUID/${GUID}/ ./nexus_settings.xml > ${CONTEXT_DIR}/nexus_settings.xml"
+      }
+    }
+
+    stage('Build Source Code') {
+      steps {
+        echo "Building artifacts using Maven."
+        dir(${CONTEXT_DIR}) {
+          sh "${mvnCmd} clean package -DskipTests=true"
+        }
+      }
+    }
+
+    stage('Run Unit Test') {
+      steps {
+        echo "Running unit tests using Maven."
+        dir(${CONTEXT_DIR}) {
+          sh "${mvnCmd} test"
+        }
+      }
+    }
+
+    stage('Run Code Coverage Tests') {
+      steps {
+        echo "Running code coverage tests using SonarQube."
+        dir(${CONTEXT_DIR}) {
+          sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube.${GUID}-sonarqube.svc:9000/ -Dsonar.projectName=${JOB_BASE_NAME}-${devTag}"
+        }
+      }
+    }
+
+    stage('Upload Artifacts to Nexus') {
+      steps {
+        echo "Archiving the artifacts to the nexus repository."
+        dir(${CONTEXT_DIR}) {
+          sh "${mvnCmd} deploy -DskipTests=true -DaltDeploymentRepository=nexus::default::http://nexus.${GUID}-nexus.svc:8081/repository/releases"
+        }
+      }
+    }
+
+    stage('Build Container Image') {
+      steps {
+        echo "Building a container image ${devTag}."
+        script {
+          openshift.withCluster() {
+            openshift.withproject() {
+              openshift.newBuild("--name=${APP_NAME}", "--image-stream=${APP_IMAGE}", "--binary", "--to=${APP_NAME}:${devTag}")
+              openshift.selector("bc", "${APP_NAME}").startBuild("--from-file=${CONTEXT_DIR}/target/${APP_NAME}.war")
+              def builds = openshift.selector("bc", "${APP_NAME}").related('builds')
+              // output the build logs to the Jenkins console. logs()
+              // would run `oc logs bc/ruby-hello-world`, but that might only
+              // output a partial log if the build is in progress. Instead, we will
+              // pass '-f' to `oc logs` to follow the build until it terminates.
+              // Arguments to logs get passed Directly on to the oc command line.
+              def result = openshift.selector("bc", "${APP_NAME}").logs("-f")
+              // You can even see exactly what oc command was executed.
+              echo "Logs executed: ${result.actions[0].cmd}"
+              builds.untilEach(1) {
+                return (it.object().status.phase = "Complete")
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('Upload Image to Nexus') {
+      steps {
+        echo "Archiving the container image to the nexus registry."
+        script {
+          sh "skopeo copy --src-tls-verify=false --dest-tls-verify=false --src-creds openshift:\$(oc whoami -t) --dest-creds admin:admin123 docker://docker-registry.default.svc.cluster.local:5000/${OPENSHIFT_BUILD_NAMESPACE}/${APP_NAME}:${devTag} docker://nexus-registry.${GUID}-nexus.svc:5000/${APP_NAME}:${devTag}"
+        }
+      }
+    }
+
   }
 }
 

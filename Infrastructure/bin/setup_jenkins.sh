@@ -11,19 +11,38 @@ GUID=$1
 REPO=$2
 CLUSTER=$3
 echo "Setting up Jenkins in project ${GUID}-jenkins from Git Repo ${REPO} for Cluster ${CLUSTER}"
+MAVEN_SLAVE_IMAGE=jenkins-slave-appdev
 
-# Code to set up the Jenkins project to execute the
-# three pipelines.
-# This will need to also build the custom Maven Slave Pod
-# Image to be used in the pipelines.
-# Finally the script needs to create three OpenShift Build
-# Configurations in the Jenkins Project to build the
-# three micro services. Expected name of the build configs:
-# * mlbparks-pipeline
-# * nationalparks-pipeline
-# * parksmap-pipeline
-# The build configurations need to have two environment variables to be passed to the Pipeline:
-# * GUID: the GUID used in all the projects
-# * CLUSTER: the base url of the cluster used (e.g. na39.openshift.opentlc.com)
+# Create custom agent container image with skopeo
+oc project ${GUID}-jenkins
+cat ../dockerfiles/Dockerfile | oc new-build --dockerfile=- --to=${MAVEN_SLAVE_IMAGE}
+oc label is ${MAVEN_SLAVE_IMAGE} role=jenkins-slave
 
-# To be Implemented by Student
+# Set up Jenkins with sufficient resources
+oc new-app -f ../templates/jenkins-persistent.yml
+oc rollout status dc jenkins
+
+# Build artifact and image
+CONTEXT_DIR=MLBParks
+APP_NAME="echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]'"
+APP_IMAGE=jboss-eap70-openshift:1.7
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
+-e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
+-e GUID=${GUID} -e GIT_SOURCE_URL=${REPO} -e APP_IMAGE=${APP_IMAGE} \
+--name=${APP_NAME}
+
+CONTEXT_DIR=Nationalparks
+APP_NAME="echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]'"
+APP_IMAGE=redhat-openjdk18-openshift:1.2
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
+-e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
+-e GUID=${GUID} -e GIT_SOURCE_URL=${REPO} -e APP_IMAGE=${APP_IMAGE} \
+--name=${APP_NAME}
+
+CONTEXT_DIR=ParksMap
+APP_NAME="echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]'"
+APP_IMAGE=redhat-openjdk18-openshift:1.2
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
+-e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
+-e GUID=${GUID} -e GIT_SOURCE_URL=${REPO} -e APP_IMAGE=${APP_IMAGE} \
+--name=${APP_NAME}
