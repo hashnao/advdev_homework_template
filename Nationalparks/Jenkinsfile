@@ -33,6 +33,9 @@ pipeline {
         echo "version: ${version}"
         echo "devTag: ${devTag}"
         echo "prodTag: ${prodTag}"
+        echo "prodTag: ${prodTag}"
+        sh "printenv"
+        sh "which mvn"
       }
     }
     stage('Check Out Source Code') {
