@@ -2,7 +2,7 @@
 pipeline {
   agent {
     kubernetes {
-      label ${MAVEN_SLAVE_IMAGE}
+      label "${MAVEN_SLAVE_IMAGE}"
       cloud "openshift"
       inheritFrom "maven"
       containerTemplate(
@@ -18,8 +18,8 @@ pipeline {
   environment {
     mvnCmd = "mvn -s ./nexus_settings.xml"
     version = getVersionFromPom("${CONTEXT_DIR}/pom.xml")
-    devTag = ${version} - ${BUILD_NUMBER}
-    prodTag = ${version}
+    devTag = "${version}-${BUILD_NUMBER}"
+    prodTag = "${version}"
   }
   options {
     timeout(time: 20, unit: 'MINUTES')
@@ -37,7 +37,7 @@ pipeline {
     }
     stage('Check Out Source Code') {
       steps {
-        git url: ${GIT_SOURCE_URL}, branch: ${GIT_SOURCE_REF}
+        git url: "${GIT_SOURCE_URL}", branch: "${GIT_SOURCE_REF}"
         sh "sed -e s/GUID/${GUID}/ ./nexus_settings.xml > ${CONTEXT_DIR}/nexus_settings.xml"
       }
     }
@@ -45,7 +45,7 @@ pipeline {
     stage('Build Source Code') {
       steps {
         echo "Building artifacts using Maven."
-        dir(${CONTEXT_DIR}) {
+        dir("${CONTEXT_DIR}") {
           sh "${mvnCmd} clean package -DskipTests=true"
         }
       }
@@ -54,7 +54,7 @@ pipeline {
     stage('Run Unit Test') {
       steps {
         echo "Running unit tests using Maven."
-        dir(${CONTEXT_DIR}) {
+        dir("${CONTEXT_DIR}") {
           sh "${mvnCmd} test"
         }
       }
@@ -63,7 +63,7 @@ pipeline {
     stage('Run Code Coverage Tests') {
       steps {
         echo "Running code coverage tests using SonarQube."
-        dir(${CONTEXT_DIR}) {
+        dir("${CONTEXT_DIR}") {
           sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube.${GUID}-sonarqube.svc:9000/ -Dsonar.projectName=${JOB_BASE_NAME}-${devTag}"
         }
       }
@@ -72,7 +72,7 @@ pipeline {
     stage('Upload Artifacts to Nexus') {
       steps {
         echo "Archiving the artifacts to the nexus repository."
-        dir(${CONTEXT_DIR}) {
+        dir("${CONTEXT_DIR}") {
           sh "${mvnCmd} deploy -DskipTests=true -DaltDeploymentRepository=nexus::default::http://nexus.${GUID}-nexus.svc:8081/repository/releases"
         }
       }
