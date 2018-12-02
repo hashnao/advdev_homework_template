@@ -12,6 +12,7 @@ REPO=$2
 CLUSTER=$3
 echo "Setting up Jenkins in project ${GUID}-jenkins from Git Repo ${REPO} for Cluster ${CLUSTER}"
 MAVEN_SLAVE_IMAGE=jenkins-slave-appdev
+MAVEN_PATH=/opt/rh/rh-maven35/root/usr/bin
 GIT_SOURCE_REF=master
 
 # Create custom agent container image with skopeo
@@ -38,7 +39,8 @@ oc set env bc ${APP_NAME} \
 -e GUID=${GUID} \
 -e GIT_SOURCE_URL=${REPO} \
 -e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
--e APP_IMAGE=${APP_IMAGE}
+-e APP_IMAGE=${APP_IMAGE} \
+-e MAVEN_PATH=${MAVEN_PATH}
 oc start-build ${APP_NAME}
 
 CONTEXT_DIR=Nationalparks
@@ -52,7 +54,8 @@ oc set env bc ${APP_NAME} \
 -e GUID=${GUID} \
 -e GIT_SOURCE_URL=${REPO} \
 -e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
--e APP_IMAGE=${APP_IMAGE}
+-e APP_IMAGE=${APP_IMAGE} \
+-e MAVEN_PATH=${MAVEN_PATH}
 oc start-build ${APP_NAME}
 
 CONTEXT_DIR=ParksMap
@@ -66,5 +69,6 @@ oc set env bc ${APP_NAME} \
 -e GUID=${GUID} \
 -e GIT_SOURCE_URL=${REPO} \
 -e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
--e APP_IMAGE=${APP_IMAGE}
+-e APP_IMAGE=${APP_IMAGE} \
+-e MAVEN_PATH=${MAVEN_PATH}
 oc start-build ${APP_NAME}

@@ -20,6 +20,7 @@ pipeline {
     version = getVersionFromPom("${CONTEXT_DIR}/pom.xml")
     devTag = "${version}-${BUILD_NUMBER}"
     prodTag = "${version}"
+    PATH = "$PATH:${MAVEN_PATH}"
   }
   options {
     timeout(time: 20, unit: 'MINUTES')
@@ -35,10 +36,9 @@ pipeline {
         echo "prodTag: ${prodTag}"
         echo "prodTag: ${prodTag}"
         sh "printenv"
-        sh "which mvn"
-        sh "export PATH=$PATH:/opt/rh/rh-maven35/root/usr/bin"
         sh "skopeo --version"
         sh "oc version"
+        sh "which mvn"
       }
     }
     stage('Check Out Source Code') {
