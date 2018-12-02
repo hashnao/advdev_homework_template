@@ -12,6 +12,7 @@ REPO=$2
 CLUSTER=$3
 echo "Setting up Jenkins in project ${GUID}-jenkins from Git Repo ${REPO} for Cluster ${CLUSTER}"
 MAVEN_SLAVE_IMAGE=jenkins-slave-appdev
+GIT_SOURCE_REF=master
 
 # Create custom agent container image with skopeo
 oc project ${GUID}-jenkins
@@ -29,23 +30,41 @@ oc rollout status dc jenkins
 CONTEXT_DIR=MLBParks
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=jboss-eap70-openshift:1.7
-oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
--e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
--e GUID=${GUID} -e GIT_SOURCE_URL=${REPO} -e APP_IMAGE=${APP_IMAGE} \
---name=${APP_NAME}
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME}
+oc set env bc ${APP_NAME} \
+-e APP_NAME=${APP_NAME} \
+-e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} \
+-e CONTEXT_DIR=${CONTEXT_DIR} \
+-e GUID=${GUID} \
+-e GIT_SOURCE_URL=${REPO} \
+-e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
+-e APP_IMAGE=${APP_IMAGE}
+oc start-build ${APP_NAME}
 
 CONTEXT_DIR=Nationalparks
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=redhat-openjdk18-openshift:1.2
-oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
--e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
--e GUID=${GUID} -e GIT_SOURCE_URL=${REPO} -e APP_IMAGE=${APP_IMAGE} \
---name=${APP_NAME}
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME}
+oc set env bc ${APP_NAME} \
+-e APP_NAME=${APP_NAME} \
+-e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} \
+-e CONTEXT_DIR=${CONTEXT_DIR} \
+-e GUID=${GUID} \
+-e GIT_SOURCE_URL=${REPO} \
+-e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
+-e APP_IMAGE=${APP_IMAGE}
+oc start-build ${APP_NAME}
 
 CONTEXT_DIR=ParksMap
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=redhat-openjdk18-openshift:1.2
-oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} \
--e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} -e CONTEXT_DIR=${CONTEXT_DIR} \
--e GUID=${GUID} -e GIT_SOURCE_URL=${REPO} -e APP_IMAGE=${APP_IMAGE} \
---name=${APP_NAME}
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME}
+oc set env bc ${APP_NAME} \
+-e APP_NAME=${APP_NAME} \
+-e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} \
+-e CONTEXT_DIR=${CONTEXT_DIR} \
+-e GUID=${GUID} \
+-e GIT_SOURCE_URL=${REPO} \
+-e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
+-e APP_IMAGE=${APP_IMAGE}
+oc start-build ${APP_NAME}

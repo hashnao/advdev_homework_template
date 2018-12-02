@@ -36,6 +36,9 @@ pipeline {
         echo "prodTag: ${prodTag}"
         sh "printenv"
         sh "which mvn"
+        sh "export PATH=$PATH:/opt/rh/rh-maven35/root/usr/bin"
+        sh "skopeo --version"
+        sh "oc version"
       }
     }
     stage('Check Out Source Code') {
