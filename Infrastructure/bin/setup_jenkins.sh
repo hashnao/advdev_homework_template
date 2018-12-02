@@ -19,7 +19,7 @@ NEXUS_REGISTRY_URL="docker://nexus-registry.${GUID}-nexus.svc:5000"
 NEXUS_USER=admin
 NEXUS_PASSWORD=admin123
 SONAR_URL="http://sonarqube.${GUID}-sonarqube.svc:9000"
-REGISTRY_URL="docker://nexus-registry.${GUID}-nexus.svc:5000"
+REGISTRY_URL="docker://nexus-registry.${GUID}-nexus.svc:5000/repository/registry"
 
 # Create custom agent container image with skopeo
 oc project ${GUID}-jenkins
