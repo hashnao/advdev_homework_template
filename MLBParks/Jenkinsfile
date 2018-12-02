@@ -74,7 +74,7 @@ pipeline {
       steps {
         echo "Running code coverage tests using SonarQube."
         dir("${CONTEXT_DIR}") {
-          sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://${SONAR_URL}/ -Dsonar.projectName=${JOB_BASE_NAME}-${devTag}"
+          sh "${mvnCmd} sonar:sonar -Dsonar.host.url=${SONAR_URL} -Dsonar.projectName=${JOB_BASE_NAME}-${devTag}"
         }
       }
     }

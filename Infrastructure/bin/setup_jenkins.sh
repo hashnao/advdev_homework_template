@@ -15,7 +15,7 @@ MAVEN_SLAVE_IMAGE=jenkins-slave-appdev
 MAVEN_PATH=/opt/rh/rh-maven35/root/usr/bin
 GIT_SOURCE_REF=master
 NEXUS_URL="http://nexus.${GUID}-nexus.svc:8081/repository/maven-releases/"
-SONAR_URL="http://sonarqube.${GUID}-sonarqube.svc:9000"
+SONAR_URL="http://sonarqube.${GUID}-sonarqube.svc:9000/"
 
 # Create custom agent container image with skopeo
 oc project ${GUID}-jenkins
