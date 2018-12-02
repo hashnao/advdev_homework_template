@@ -22,7 +22,12 @@ pipeline {
     prodTag = "${version}"
     PATH = "$PATH:${MAVEN_PATH}"
     NEXUS_URL = "${NEXUS_URL}"
+    NEXUS_REGISTRY_URL = "${NEXUS_REGISTRY_URL}"
     SONAR_URL = "${SONAR_URL}"
+    REGISTRY_URL = "${REGISTRY_URL}"
+    TOKEN = "/run/secrets/kubernetes.io/serviceaccount/token"
+    NEXUS_USER = "${NEXUS_USER}"
+    NEXUS_PASSWORD = "${NEXUS_PASSWORD}"
   }
   options {
     timeout(time: 20, unit: 'MINUTES')
@@ -36,8 +41,8 @@ pipeline {
         echo "version: ${version}"
         echo "devTag: ${devTag}"
         echo "prodTag: ${prodTag}"
-        echo "prodTag: ${prodTag}"
         echo "NEXUS_URL: ${NEXUS_URL}"
+        echo "NEXUS_REGISTRY_URL: ${NEXUS_REGISTRY_URL}"
         echo "SONAR_URL: ${SONAR_URL}"
         sh "printenv"
         sh "skopeo --version"
@@ -118,7 +123,7 @@ pipeline {
       steps {
         echo "Archiving the container image to the nexus registry."
         script {
-          sh "skopeo copy --src-tls-verify=false --dest-tls-verify=false --src-creds openshift:\$(oc whoami -t) --dest-creds admin:admin123 docker://docker-registry.default.svc.cluster.local:5000/${OPENSHIFT_BUILD_NAMESPACE}/${APP_NAME}:${devTag} docker://nexus-registry.${GUID}-nexus.svc:5000/${APP_NAME}:${devTag}"
+          sh "skopeo copy --src-tls-verify=false --dest-tls-verify=false --src-creds openshift:$(cat ${TOKEN}) --dest-creds ${NEXUS_USER}:${NEXUS_PASSWORD} ${REGISTRY_URL}/${OPENSHIFT_BUILD_NAMESPACE}/${APP_NAME}:${devTag} ${NEXUS_REGISTRY_URL}/${APP_NAME}:${devTag}"
         }
       }
     }
