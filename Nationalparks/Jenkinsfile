@@ -21,6 +21,8 @@ pipeline {
     devTag = "${version}-${BUILD_NUMBER}"
     prodTag = "${version}"
     PATH = "$PATH:${MAVEN_PATH}"
+    NEXUS_URL = "${NEXUS_URL}"
+    SONAR_URL = "${SONAR_URL}"
   }
   options {
     timeout(time: 20, unit: 'MINUTES')
@@ -35,6 +37,8 @@ pipeline {
         echo "devTag: ${devTag}"
         echo "prodTag: ${prodTag}"
         echo "prodTag: ${prodTag}"
+        echo "NEXUS_URL: ${NEXUS_URL}"
+        echo "SONAR_URL: ${SONAR_URL}"
         sh "printenv"
         sh "skopeo --version"
         sh "oc version"
@@ -70,7 +74,7 @@ pipeline {
       steps {
         echo "Running code coverage tests using SonarQube."
         dir("${CONTEXT_DIR}") {
-          sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube.${GUID}-sonarqube.svc:9000/ -Dsonar.projectName=${JOB_BASE_NAME}-${devTag}"
+          sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://${SONAR_URL}/ -Dsonar.projectName=${JOB_BASE_NAME}-${devTag}"
         }
       }
     }
@@ -79,7 +83,7 @@ pipeline {
       steps {
         echo "Archiving the artifacts to the nexus repository."
         dir("${CONTEXT_DIR}") {
-          sh "${mvnCmd} deploy -DskipTests=true -DaltDeploymentRepository=nexus::default::http://nexus.${GUID}-nexus.svc:8081/repository/releases"
+          sh "${mvnCmd} deploy -DskipTests=true -DaltDeploymentRepository=nexus::default::${NEXUS_URL}"
         }
       }
     }

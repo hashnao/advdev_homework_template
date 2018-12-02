@@ -14,6 +14,8 @@ echo "Setting up Jenkins in project ${GUID}-jenkins from Git Repo ${REPO} for Cl
 MAVEN_SLAVE_IMAGE=jenkins-slave-appdev
 MAVEN_PATH=/opt/rh/rh-maven35/root/usr/bin
 GIT_SOURCE_REF=master
+NEXUS_URL="http://nexus.${GUID}-nexus.svc:8081/repository/maven-releases/"
+SONAR_URL="http://sonarqube.${GUID}-sonarqube.svc:9000"
 
 # Create custom agent container image with skopeo
 oc project ${GUID}-jenkins
@@ -31,8 +33,7 @@ oc rollout status dc jenkins
 CONTEXT_DIR=MLBParks
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=jboss-eap70-openshift:1.7
-oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME}
-oc set env bc ${APP_NAME} \
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME} \
 -e APP_NAME=${APP_NAME} \
 -e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} \
 -e CONTEXT_DIR=${CONTEXT_DIR} \
@@ -40,14 +41,14 @@ oc set env bc ${APP_NAME} \
 -e GIT_SOURCE_URL=${REPO} \
 -e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
 -e APP_IMAGE=${APP_IMAGE} \
--e MAVEN_PATH=${MAVEN_PATH}
-oc start-build ${APP_NAME}
+-e MAVEN_PATH=${MAVEN_PATH} \
+-e NEXUS_URL=${NEXUS_URL} \
+-e SONAR_URL=${SONAR_URL}
 
 CONTEXT_DIR=Nationalparks
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=redhat-openjdk18-openshift:1.2
-oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME}
-oc set env bc ${APP_NAME} \
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME} \
 -e APP_NAME=${APP_NAME} \
 -e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} \
 -e CONTEXT_DIR=${CONTEXT_DIR} \
@@ -55,14 +56,14 @@ oc set env bc ${APP_NAME} \
 -e GIT_SOURCE_URL=${REPO} \
 -e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
 -e APP_IMAGE=${APP_IMAGE} \
--e MAVEN_PATH=${MAVEN_PATH}
-oc start-build ${APP_NAME}
+-e MAVEN_PATH=${MAVEN_PATH} \
+-e NEXUS_URL=${NEXUS_URL} \
+-e SONAR_URL=${SONAR_URL}
 
 CONTEXT_DIR=ParksMap
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_IMAGE=redhat-openjdk18-openshift:1.2
-oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME}
-oc set env bc ${APP_NAME} \
+oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME} \
 -e APP_NAME=${APP_NAME} \
 -e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} \
 -e CONTEXT_DIR=${CONTEXT_DIR} \
@@ -70,5 +71,6 @@ oc set env bc ${APP_NAME} \
 -e GIT_SOURCE_URL=${REPO} \
 -e GIT_SOURCE_REF=${GIT_SOURCE_REF} \
 -e APP_IMAGE=${APP_IMAGE} \
--e MAVEN_PATH=${MAVEN_PATH}
-oc start-build ${APP_NAME}
+-e MAVEN_PATH=${MAVEN_PATH} \
+-e NEXUS_URL=${NEXUS_URL} \
+-e SONAR_URL=${SONAR_URL}
