@@ -99,20 +99,9 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withproject() {
-              openshift.newBuild("--name=${APP_NAME}", "--image-stream=${APP_IMAGE}", "--binary", "--to=${APP_NAME}:${devTag}")
-              openshift.selector("bc", "${APP_NAME}").startBuild("--from-file=${CONTEXT_DIR}/target/${APP_NAME}.war")
-              def builds = openshift.selector("bc", "${APP_NAME}").related('builds')
-              // output the build logs to the Jenkins console. logs()
-              // would run `oc logs bc/ruby-hello-world`, but that might only
-              // output a partial log if the build is in progress. Instead, we will
-              // pass '-f' to `oc logs` to follow the build until it terminates.
-              // Arguments to logs get passed Directly on to the oc command line.
-              def result = openshift.selector("bc", "${APP_NAME}").logs("-f")
-              // You can even see exactly what oc command was executed.
-              echo "Logs executed: ${result.actions[0].cmd}"
-              builds.untilEach(1) {
-                return (it.object().status.phase = "Complete")
-              }
+              def bc = openshift.newBuild("--name=${APP_NAME}", "--image-stream=${APP_IMAGE}", "--binary=true", "--to=${APP_NAME}:${devTag}")
+              def buildSelector = bc.startBuild("${APP_NAME}", "--from-file=${CONTEXT_DIR}/target/${APP_NAME}.war")
+              buildSelector.logs("-f")
             }
           }
         }
