@@ -28,6 +28,7 @@ pipeline {
     NEXUS_PASSWORD = "${NEXUS_PASSWORD}"
     SONAR_URL = "${SONAR_URL}"
     REGISTRY_URL = "${REGISTRY_URL}"
+    NAMESPACE_DEV = "${NAMESPACE_DEV}"
     TOKEN = "/run/secrets/kubernetes.io/serviceaccount/token"
   }
   options {
@@ -97,7 +98,7 @@ pipeline {
         echo "Building a container image ${devTag}."
         script {
           openshift.withCluster() {
-            openshift.withProject() {
+            openshift.withProject("${NAMESPACE_DEV}") {
               if(!openshift.selector("bc", "${APP_NAME}").exists()) {
                 // The selector returned from newBuild will select all objects created by the operation
                 def nb = openshift.newBuild(

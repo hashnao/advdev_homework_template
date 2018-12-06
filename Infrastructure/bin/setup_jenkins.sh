@@ -28,7 +28,10 @@ NEXUS_USER=admin
 NEXUS_PASSWORD=admin123
 SONAR_URL="http://sonarqube.${GUID}-sonarqube.svc:9000"
 REGISTRY_URL="docker://docker-registry.default.svc:5000"
+NAMESPACE_DEV="${GUID}-parks-dev"
+NAMESPACE_JENKINS="${GUID}-jenkins"
 
+# Functions
 start_binary_build() {
   oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME}-pipeline \
   -e APP_NAME=${APP_NAME} \
@@ -50,20 +53,22 @@ start_binary_build() {
   -e NEXUS_USER=${NEXUS_USER} \
   -e NEXUS_PASSWORD=${NEXUS_PASSWORD} \
   -e SONAR_URL=${SONAR_URL} \
-  -e REGISTRY_URL=${REGISTRY_URL}
+  -e REGISTRY_URL=${REGISTRY_URL} \
+  -e NAMESPACE_DEV=${NAMESPACE_DEV}
 }
 
-echo "Setting up Jenkins in project ${GUID}-jenkins from Git Repo ${REPO} for Cluster ${CLUSTER}"
+echo "Setting up Jenkins in project ${NAMESPACE_JENKINS} from Git Repo ${REPO} for Cluster ${CLUSTER}"
 
 # Create custom agent container image with skopeo
-oc project ${GUID}-jenkins
+oc project ${NAMESPACE_JENKINS}
 cat ../dockerfiles/Dockerfile | oc new-build --dockerfile=- --to=${MAVEN_SLAVE_IMAGE}
 oc label is ${MAVEN_SLAVE_IMAGE} role=jenkins-slave
 
 # Set up Jenkins with sufficient resources
+TEMPLATE="../templates/jenkins-persistent.yml"
 oc rollout status dc jenkins
 if [ "$?" -ne 0 ]; then
-  oc new-app -f ../templates/jenkins-persistent.yml
+  oc new-app -f ${TEMPLATE}
 fi
 oc rollout status dc jenkins
 
