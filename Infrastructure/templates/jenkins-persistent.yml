@@ -174,26 +174,26 @@ objects:
 parameters:
 - displayName: Jenkins Service Name
   name: JENKINS_SERVICE_NAME
-  value: jenkins
+  value: "jenkins"
 - displayName: Jenkins JNLP Service Name
   name: JNLP_SERVICE_NAME
-  value: jenkins-jnlp
+  value: "jenkins-jnlp"
 - displayName: Enable OAuth in Jenkins
   name: ENABLE_OAUTH
   value: "true"
 - displayName: Memory Limit
   name: MEMORY_LIMIT
-  value: 4Gi
+  value: "4Gi"
 - displayName: Volume Capacity
   name: VOLUME_CAPACITY
+  value: "1Gi"
   required: true
-  value: 1Gi
 - displayName: Jenkins ImageStream Namespace
   name: NAMESPACE
-  value: openshift
+  value: "openshift"
 - displayName: Jenkins Image
   name: JENKINS_IMAGE
-  value: registry.access.redhat.com/openshift3/jenkins-2-rhel7
+  value: "registry.access.redhat.com/openshift3/jenkins-2-rhel7"
 - displayName: Jenkins ImageTag
   name: JENKINS_IMAGE_TAG
-  value: v3.11
+  value: "v3.11"

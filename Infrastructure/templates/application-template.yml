@@ -1,0 +1,171 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: ${APP_NAME}-template
+metadata:
+  name: ${APP_NAME}-template
+  annotations:
+    description: Application Template
+    tags: ${APP_NAME}
+objects:
+- apiVersion: v1
+  kind: ConfigMap
+  data:
+    APPNAME: "${APP_DESCRIPTION}"
+  metadata:
+    name: ${APP_NAME}
+    annotations: {}
+    labels:
+      app: ${APP_NAME}
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations: {}
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    replicas: 1
+    selector:
+      app: ${APP_NAME}
+      deploymentconfig: ${APP_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        post:
+          execNewPod:
+            command:
+            - curl
+            - http://${APP_NAME}.${NAMESPACE}.svc:8080/ws/data/load/
+            containername: ${APP_NAME}
+          failurePolicy: Ignore
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations: {}
+        labels:
+          app: ${APP_NAME}
+          deploymentconfig: ${APP_NAME}
+      spec:
+        containers:
+        - env:
+          - name: APPNAME
+            valueFrom:
+              configMapKeyRef:
+                key: APPNAME
+                name: ${APP_NAME}
+          image: ' '
+          imagePullPolicy: Always
+          name: ${APP_NAME}
+          livenessProbe:
+            failureThreshold: 3
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            timeoutSeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ws/healthz/
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APP_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${APP_NAME}:${APP_IMAGESTREAMTAG}
+          namespace: ${NAMESPACE}
+      type: ImageChange
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${APP_NAME}
+      type: ${BACKEND_SERVICE}
+    name: ${APP_NAME}
+  spec:
+    ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: ${APP_NAME}
+      deploymentconfig: ${APP_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    annotations: {}
+    labels:
+      app: ${APP_NAME}
+      type: ${BACKEND_SERVICE}
+    name: ${APP_NAME}
+  spec:
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
+    to:
+      kind: Service
+      name: ${APP_NAME}
+      weight: 100
+    wildcardPolicy: None
+  status: {}
+parameters:
+- displayName: Project Namespace
+  name: NAMESPACE
+  value: ""
+  required: true
+- displayName: Applicaion Name
+  name: APP_NAME
+  value: ""
+  required: true
+- displayName: ImageStreamTag
+  name: APP_IMAGESTREAMTAG
+  value: ""
+  required: true
+- displayName: Applicaion Description ConfigMap
+  description:
+    For dev,
+    Set "MLB Parks (Dev)" for MLBParks
+    Set "National Parks (Dev)" for Nationalparks
+    Set "ParksMap (Dev)" for ParksMap
+    For prod,
+    Set "MLB Parks (Green/Blue)"" for MLBParks
+    Set "National Parks (Blue/Green)" Nationalparks
+    Set "ParksMap (Blue/Green)" for ParksMap
+  name: APP_DESCRIPTION
+  value: ""
+  required: true
+- displayName: Label
+  description: Set parksmap-backend only for ParksMap
+  name: BACKEND_SERVICE
+  value: ""

@@ -29,6 +29,7 @@ NEXUS_PASSWORD=admin123
 SONAR_URL="http://sonarqube.${GUID}-sonarqube.svc:9000"
 REGISTRY_URL="docker://docker-registry.default.svc:5000"
 NAMESPACE_DEV="${GUID}-parks-dev"
+NAMESPACE_PROD="${GUID}-parks-prod"
 NAMESPACE_JENKINS="${GUID}-jenkins"
 
 # Functions

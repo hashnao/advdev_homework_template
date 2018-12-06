@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: jenkins-slave-test
+spec:
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfile: |-
+        pipeline {
+          agent {
+            label 'jenkins-slave-appdev'
+          }
+          environment {
+            GUID = 'Your GUID'
+          }
+          stages {
+            stage('Env Test') {
+              steps {
+                sh "oc version"
+                sh "skopeo --version"
+                echo "GUID: ${GUID}"
+                echo "BUILD_NUMBER: ${BUILD_NUMBER}"
+                sh "printenv"
+                echo "Current Directory: ${PWD}"
+                sh "mkdir -p targets"
+                dir ("../") {
+                  echo "Current Directory: ${PWD}"
+                }
+              }
+            }
+            stage('Next Stage') {
+              steps {
+                echo "Current Directory: ${PWD}"
+                sh "ls -d targets"
+              }
+            }
+            stage('Preamble') {
+              steps {
+                script {
+                  openshift.withCluster() {
+                    openshift.withProject() {
+                      echo "Using project: ${openshift.project()}"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+  triggers:
+  - type: ConfigChange
