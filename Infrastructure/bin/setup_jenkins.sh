@@ -72,6 +72,9 @@ if [ "$?" -ne 0 ]; then
 fi
 oc rollout status dc jenkins
 
+# Grant permissions to the Jenkins service account for building images in the ${NAMESPACE_DEV}
+oc adm policy add-role-to-user edit system:serviceaccount:${NAMESPACE_JENKINS}:jenkins -n ${NAMESPACE_DEV}
+
 # Build artifact and image
 CONTEXT_DIR=MLBParks
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')

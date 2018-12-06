@@ -141,7 +141,7 @@ pipeline {
       steps {
         echo "Archiving the container image to the nexus registry."
         script {
-          sh "skopeo copy --src-tls-verify=false --dest-tls-verify=false --src-creds openshift:\$(cat ${TOKEN}) --dest-creds ${NEXUS_USER}:${NEXUS_PASSWORD} ${REGISTRY_URL}/${OPENSHIFT_BUILD_NAMESPACE}/${APP_NAME}:${devTag} ${NEXUS_REGISTRY_URL}/${APP_NAME}:${devTag}"
+          sh "skopeo copy --src-tls-verify=false --dest-tls-verify=false --src-creds openshift:\$(cat ${TOKEN}) --dest-creds ${NEXUS_USER}:${NEXUS_PASSWORD} ${REGISTRY_URL}/${NAMESPACE_DEV}/${APP_NAME}:${devTag} ${NEXUS_REGISTRY_URL}/${APP_NAME}:${devTag}"
         }
       }
     }
