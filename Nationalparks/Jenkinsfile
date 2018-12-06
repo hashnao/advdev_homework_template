@@ -1,4 +1,3 @@
-// Jenkinsfile for MLBParks
 pipeline {
   agent {
     kubernetes {
@@ -8,10 +7,10 @@ pipeline {
       containerTemplate(
         name: "jnlp",
         image: "${MAVEN_SLAVE_IMAGE}",
-        resourceRequestMemory: "1Gi",
-        resourceLimitMemory: "2Gi",
-        resourceRequestCpu: "1",
-        resourceLimitCpu: "2"
+        resourceRequestMemory: "${JENKINS_SLAVE_MEMORY_REQUEST}",
+        resourceLimitMemory: "${JENKINS_SLAVE_MEMORY_LIMIT}",
+        resourceRequestCpu: "${JENKINS_SLAVE_CPU_REQUEST}",
+        resourceLimitCpu: "${JENKINS_SLAVE_CPU_LIMIT}"
       )
     }
   }
@@ -22,41 +21,45 @@ pipeline {
     prodTag = "${version}"
     PATH = "$PATH:${MAVEN_PATH}"
     NEXUS_URL = "${NEXUS_URL}"
+    NEXUS_URI_MAVEN = "${NEXUS_URI_MAVEN}"
+    NEXUS_URI_PUBLIC = "${NEXUS_URI_PUBLIC}"
     NEXUS_REGISTRY_URL = "${NEXUS_REGISTRY_URL}"
+    NEXUS_USER = "${NEXUS_USER}"
+    NEXUS_PASSWORD = "${NEXUS_PASSWORD}"
     SONAR_URL = "${SONAR_URL}"
     REGISTRY_URL = "${REGISTRY_URL}"
     TOKEN = "/run/secrets/kubernetes.io/serviceaccount/token"
-    NEXUS_USER = "${NEXUS_USER}"
-    NEXUS_PASSWORD = "${NEXUS_PASSWORD}"
   }
   options {
     timeout(time: 20, unit: 'MINUTES')
   }
-
   stages {
     stage('Variable Check') {
       steps {
-        echo "MAVEN_SLAVE_IMAGE: ${MAVEN_SLAVE_IMAGE}"
-        echo "mvnCmd: ${mvnCmd}"
         echo "version: ${version}"
         echo "devTag: ${devTag}"
         echo "prodTag: ${prodTag}"
+        echo "MAVEN_SLAVE_IMAGE: ${MAVEN_SLAVE_IMAGE}"
+        echo "mvnCmd: ${mvnCmd}"
         echo "NEXUS_URL: ${NEXUS_URL}"
+        echo "NEXUS_URI_MAVEN: ${NEXUS_URI_MAVEN}"
+        echo "NEXUS_URI_PUBLIC: ${NEXUS_URI_PUBLIC}"
         echo "NEXUS_REGISTRY_URL: ${NEXUS_REGISTRY_URL}"
         echo "SONAR_URL: ${SONAR_URL}"
+        /*
         sh "printenv"
         sh "skopeo --version"
         sh "oc version"
         sh "which mvn"
+        */
       }
     }
     stage('Check Out Source Code') {
       steps {
         git url: "${GIT_SOURCE_URL}", branch: "${GIT_SOURCE_REF}"
-        sh "sed -e s/GUID/${GUID}/ ./nexus_settings.xml > ${CONTEXT_DIR}/nexus_settings.xml"
+        sh "sed -e 's|NEXUS_URL|${NEXUS_URL}|' -e 's|NEXUS_URI_PUBLIC|${NEXUS_URI_PUBLIC}/|' -e 's|NEXUS_USER|${NEXUS_USER}|' -e 's|NEXUS_PASSWORD|${NEXUS_PASSWORD}|' ./nexus_settings.xml > ${CONTEXT_DIR}/nexus_settings.xml"
       }
     }
-
     stage('Build Source Code') {
       steps {
         echo "Building artifacts using Maven."
@@ -65,7 +68,6 @@ pipeline {
         }
       }
     }
-
     stage('Run Unit Test') {
       steps {
         echo "Running unit tests using Maven."
@@ -74,7 +76,6 @@ pipeline {
         }
       }
     }
-
     stage('Run Code Coverage Tests') {
       steps {
         echo "Running code coverage tests using SonarQube."
@@ -83,31 +84,58 @@ pipeline {
         }
       }
     }
-
     stage('Upload Artifacts to Nexus') {
       steps {
         echo "Archiving the artifacts to the nexus repository."
         dir("${CONTEXT_DIR}") {
-          sh "${mvnCmd} deploy -DskipTests=true -DaltDeploymentRepository=nexus::default::${NEXUS_URL}"
+          sh "${mvnCmd} deploy -DskipTests=true -DaltDeploymentRepository=nexus::default::${NEXUS_URL}/${NEXUS_URI_MAVEN}/"
         }
       }
     }
-
     stage('Build Container Image') {
       steps {
         echo "Building a container image ${devTag}."
         script {
           openshift.withCluster() {
-            openshift.withproject() {
-              def bc = openshift.newBuild("--name=${APP_NAME}", "--image-stream=${APP_IMAGE}", "--binary=true", "--to=${APP_NAME}:${devTag}")
-              def buildSelector = bc.startBuild("${APP_NAME}", "--from-file=${CONTEXT_DIR}/target/${APP_NAME}.war")
-              buildSelector.logs("-f")
+            openshift.withProject() {
+              if(!openshift.selector("bc", "${APP_NAME}").exists()) {
+                // The selector returned from newBuild will select all objects created by the operation
+                def nb = openshift.newBuild(
+                  "--name=${APP_NAME}",
+                  "--image-stream=${APP_IMAGE}",
+                  "--binary=true",
+                  "--to=${APP_NAME}:latest")
+              }
+              def nb = openshift.selector("bc", "${APP_NAME}")
+              nb.startBuild("${APP_NAME}", "--from-file=${CONTEXT_DIR}/target/${APP_NAME}.war")
+              // Print out information about the objects created by newBuild
+              echo "newBuild created: ${nb.count()} objects: ${nb.names()}"
+              // Filter non-BuildConfig objects and create selector which will find builds related to the BuildConfig
+              def buildSelector = nb.narrow("bc").related("builds")
+              // Throw exception after 5 minutes
+              timeout(5) {
+                buildSelector.untilEach(1) {
+                  return (it.object().status.phase == "Complete")
+                }
+              }
+              echo "Builds have been completed: ${buildSelector.names()}"
+              // Print a list of the builds which have been created
+              echo "Build logs for ${buildSelector.names()}:"
+              // Find the bc again, and ask for its logs
+              def result = nb.narrow("bc").logs()
+              // Each high-level operation exposes stout/stderr/status of oc actions that composed
+              echo "Result of logs operation:"
+              echo "  status: ${result.status}"
+              echo "  stderr: ${result.err}"
+              echo "  number of actions to fulfill: ${result.actions.size()}"
+              echo "  first action executed: ${result.actions[0].cmd}"
+              // Tag the ${APP_NAME}:latest image as ${APP_NAME}:${devTag}
+              openshift.tag("${APP_NAME}:latest", "${APP_NAME}:${devTag}")
             }
           }
         }
       }
     }
-
     stage('Upload Image to Nexus') {
       steps {
         echo "Archiving the container image to the nexus registry."
@@ -116,10 +144,8 @@ pipeline {
         }
       }
     }
-
   }
 }
-
 // Convenience Functions to read variables from the pom.xml
 // Do not change anything below this line.
 def getVersionFromPom(pom) {
