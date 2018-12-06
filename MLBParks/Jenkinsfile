@@ -107,7 +107,7 @@ pipeline {
                   "--to=${APP_NAME}:latest")
               }
               def nb = openshift.selector("bc", "${APP_NAME}")
-              nb.startBuild("--from-file=${CONTEXT_DIR}/target/${APP_NAME}.war")
+              nb.startBuild("--from-file=${CONTEXT_DIR}/target/${APP_NAME}.jar")
               // Print out information about the objects created by newBuild
               echo "newBuild created: ${nb.count()} objects: ${nb.names()}"
               // Filter non-BuildConfig objects and create selector which will find builds related to the BuildConfig
