@@ -30,7 +30,6 @@ echo "Setting up Parks Development Environment in project ${NAMESPACE_DEV}"
 # To be Implemented by Student
 # Grant permissions to the Jenkins service account
 oc adm policy add-role-to-user edit system:serviceaccount:${NAMESPACE_JENKINS}:jenkins -n ${NAMESPACE_DEV}
-oc adm policy add-role-to-user view -z default -n ${NAMESPACE_DEV}
 
 # Create a MongoDB database
 MONGODB_TEMPLATE="../templates/mongodb-persistent.yml"
@@ -66,24 +65,24 @@ oc create cm ${CONFIGMAP_MONGODB} \
 CONTEXT_DIR=MLBParks
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_DESCRIPTION="MLB Parks (Dev)"
-BACKEND_SERVICE="${APP_NAME}-frontend"
-oc start-build ${APP_NAME}-pipeline -n ${NAMESPACE_JENKINS}
+BACKEND_SERVICE="parksmap-frontend"
 deploy_application
 oc set env dc/${APP_NAME} --from=configmap/${CONFIGMAP_MONGODB}
+oc start-build ${APP_NAME}-pipeline -n ${NAMESPACE_JENKINS}
 
 # For Nationalparks
 CONTEXT_DIR=Nationalparks
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_DESCRIPTION="National Parks (Dev)"
-BACKEND_SERVICE="${APP_NAME}-frontend"
-oc start-build ${APP_NAME}-pipeline -n ${NAMESPACE_JENKINS}
+BACKEND_SERVICE="parksmap-frontend"
 deploy_application
 oc set env dc/${APP_NAME} --from=configmap/${CONFIGMAP_MONGODB}
+oc start-build ${APP_NAME}-pipeline -n ${NAMESPACE_JENKINS}
 
 # For ParksMap
 CONTEXT_DIR=ParksMap
 APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_DESCRIPTION="ParksMap (Dev)"
-BACKEND_SERVICE="${APP_NAME}-backend"
-oc start-build ${APP_NAME}-pipeline -n ${NAMESPACE_JENKINS}
+BACKEND_SERVICE=""
 deploy_application
+oc start-build ${APP_NAME}-pipeline -n ${NAMESPACE_JENKINS}
