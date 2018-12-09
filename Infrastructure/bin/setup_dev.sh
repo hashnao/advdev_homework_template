@@ -16,6 +16,7 @@ APP_IMAGESTREAMTAG="latest"
 # Functions
 deploy_application() {
   oc new-app -f ${TEMPLATE} \
+  --allow-missing-imagestream-tags=true --allow-missing-images=true \
   -p NAMESPACE=${NAMESPACE_DEV} \
   -p APP_NAME=${APP_NAME} \
   -p APP_IMAGESTREAMTAG=${APP_IMAGESTREAMTAG} \
