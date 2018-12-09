@@ -153,10 +153,10 @@ pipeline {
       steps {
         echo "Running integration tests using curl."
         script {
-          sh "curl http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/"
-          sh "curl http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/"
+          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/"
+          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/"
           echo "Populating the MLB Parks Data into the MongoDB database"
-          sh "curl http://mlbparks-${GUID}-parks-dev.apps.na39.openshift.opentlc.com/ws/data/load/"
+          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/data/load/"
         }
       }
     }
