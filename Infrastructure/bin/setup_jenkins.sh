@@ -37,6 +37,7 @@ start_binary_build() {
   oc new-build ${REPO} --strategy=pipeline --context-dir=${CONTEXT_DIR} --name=${APP_NAME}-pipeline \
   -e APP_NAME=${APP_NAME} \
   -e APP_IMAGE=${APP_IMAGE} \
+  -e CLUSTER=${CLUSTER} \
   -e MAVEN_SLAVE_IMAGE=${MAVEN_SLAVE_IMAGE} \
   -e CONTEXT_DIR=${CONTEXT_DIR} \
   -e GUID=${GUID} \
