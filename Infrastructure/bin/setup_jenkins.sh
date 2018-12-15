@@ -24,8 +24,9 @@ NEXUS_URL="http://nexus.${GUID}-nexus.svc:8081"
 NEXUS_URI_MAVEN="repository/maven-releases"
 NEXUS_URI_PUBLIC="repository/maven-all-public"
 NEXUS_REGISTRY_URL="docker://nexus-registry.${GUID}-nexus.svc:5000/repository/registry"
-NEXUS_USER=admin
-NEXUS_PASSWORD=admin123
+NEXUS_CREDENTIALS_ID="nexus"
+NEXUS_USER="admin"
+NEXUS_PASSWORD="admin123"
 SONAR_URL="http://sonarqube.${GUID}-sonarqube.svc:9000"
 REGISTRY_URL="docker://docker-registry.default.svc:5000"
 NAMESPACE_DEV="${GUID}-parks-dev"
@@ -52,8 +53,6 @@ start_binary_build() {
   -e NEXUS_URI_MAVEN=${NEXUS_URI_MAVEN} \
   -e NEXUS_URI_PUBLIC=${NEXUS_URI_PUBLIC} \
   -e NEXUS_REGISTRY_URL=${NEXUS_REGISTRY_URL} \
-  -e NEXUS_USER=${NEXUS_USER} \
-  -e NEXUS_PASSWORD=${NEXUS_PASSWORD} \
   -e SONAR_URL=${SONAR_URL} \
   -e REGISTRY_URL=${REGISTRY_URL} \
   -e NAMESPACE_DEV=${NAMESPACE_DEV}
@@ -74,8 +73,24 @@ if [ "$?" -ne 0 ]; then
 fi
 oc rollout status dc jenkins
 
-# Grant permissions to the Jenkins service account for building images in the ${NAMESPACE_DEV}
-oc adm policy add-role-to-user edit system:serviceaccount:${NAMESPACE_JENKINS}:jenkins -n ${NAMESPACE_DEV}
+# Create Jenkins credentials for Nexus via the REST API
+TOKEN=$(oc whoami -t)
+URL="https://$(oc get route jenkins --template='{{ .spec.host }}')/credentials/store/system/domain/_/createCredentials"
+HEADER="Authorization: Bearer ${TOKEN}"
+
+echo "Sleep 30 seconds waiting for Jenkins running."
+sleep 30
+curl -X POST -k -H "${HEADER}" "${URL}" --data-urlencode 'json={
+  "": "0",
+  "credentials": {
+    "scope": "GLOBAL",
+    "id": "${NEXUS_CREDENTIALS_ID}",
+    "username": "${NEXUS_USER}",
+    "password": "${NEXUS_PASSWORD}",
+    "description": "Nexus Administrator",
+    "stapler-class": "com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl"
+  }
+}'
 
 # Build artifact and image
 CONTEXT_DIR=MLBParks

@@ -34,12 +34,15 @@ pipeline {
     NEXUS_URI_MAVEN = "${NEXUS_URI_MAVEN}"
     NEXUS_URI_PUBLIC = "${NEXUS_URI_PUBLIC}"
     NEXUS_REGISTRY_URL = "${NEXUS_REGISTRY_URL}"
-    NEXUS_USER = "${NEXUS_USER}"
-    NEXUS_PASSWORD = "${NEXUS_PASSWORD}"
+    // Create Jenkins credentials for Nexus and set the ID as nexus.
+    NEXUS_CREDENTIALS = credentials("nexus")
     PATH = "$PATH:${MAVEN_PATH}"
     REGISTRY_URL = "${REGISTRY_URL}"
     SONAR_URL = "${SONAR_URL}"
-    TOKEN = readFile("/run/secrets/kubernetes.io/serviceaccount/token").trim()
+    // The default Jenkins credentials ID associated with secret is the same.
+    // Change the ID chekcing config.xml if it's different.
+    JENKINS_DEFAULT_CREDENTIALS_ID = "1a12dfa4-7fc5-47a7-aa17-cc56572a41c7"
+    TOKEN = credentials("${JENKINS_DEFAULT_CREDENTIALS_ID}")
   }
   options {
     timeout(time: 20, unit: 'MINUTES')
@@ -61,7 +64,7 @@ pipeline {
     stage('Check Out Source Code') {
       steps {
         git url: "${GIT_SOURCE_URL}", branch: "${GIT_SOURCE_REF}"
-        sh "sed -e 's|NEXUS_URL|${NEXUS_URL}|' -e 's|NEXUS_URI_PUBLIC|${NEXUS_URI_PUBLIC}/|' -e 's|NEXUS_USER|${NEXUS_USER}|' -e 's|NEXUS_PASSWORD|${NEXUS_PASSWORD}|' ./nexus_settings.xml > ${CONTEXT_DIR}/nexus_settings.xml"
+        sh "sed -e 's|NEXUS_URL|${NEXUS_URL}|' -e 's|NEXUS_URI_PUBLIC|${NEXUS_URI_PUBLIC}/|' -e 's|NEXUS_USER|${NEXUS_CREDENTIALS_USR}|' -e 's|NEXUS_PASSWORD|${NEXUS_CREDENTIALS_PSW}|' ./nexus_settings.xml > ${CONTEXT_DIR}/nexus_settings.xml"
       }
     }
     stage('Build Source Code') {
@@ -102,25 +105,12 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withProject("${NAMESPACE_DEV}") {
-              if(!openshift.selector("bc", "${APP_NAME}").exists()) {
-                // The selector returned from newBuild will select all objects created by the operation
-                def nb = openshift.newBuild(
-                  "--name=${APP_NAME}",
-                  "--image-stream=${APP_IMAGE}",
-                  "--binary=true",
-                  "--to=${APP_NAME}:latest")
-                // Print out information about the objects created by newBuild
-                echo "newBuild created: ${nb.count()} objects: ${nb.names()}"
-              }
               // Define nb again as the nb definition above can be applied only within the if statement.
-              def nb = openshift.selector("bc", "${APP_NAME}")
-              nb.startBuild("--from-dir=${CONTEXT_DIR}/target/")
+              def bc = openshift.selector("bc", "${APP_NAME}")
+              bc.startBuild("--from-dir=${CONTEXT_DIR}/target/")
+              def result = bc.logs("-f")
               // Filter non-BuildConfig objects and create selector which will find builds related to the BuildConfig
-              def buildSelector = nb.narrow("bc").related("builds")
-              // Print a list of the builds which have been created
-              echo "Build logs for ${buildSelector.names()}:"
-              // Find the bc again, and ask for its logs
-              def result = nb.narrow("bc").logs()
+              def buildSelector = bc.related("builds")
               // Throw exception after 5 minutes
               timeout(5) {
                 buildSelector.untilEach(1) {
@@ -128,12 +118,11 @@ pipeline {
                 }
               }
               echo "Builds have been completed: ${buildSelector.names()}"
-              // Each high-level operation exposes stout/stderr/status of oc actions that composed
-              echo "Result of logs operation:"
-              echo "  status: ${result.status}"
-              echo "  stderr: ${result.err}"
-              echo "  number of actions to fulfill: ${result.actions.size()}"
-              echo "  first action executed: ${result.actions[0].cmd}"
+              // Show exactly what oc command was executed.
+              echo "Logs executed: ${result.actions[0].cmd}"
+              // Show the standard output and standard error of the command.
+              def logsString = result.actions[0].out
+              def logsErr = result.actions[0].err
               // Tag the ${APP_NAME}:latest image as ${APP_NAME}:${devTag}
               openshift.tag("${APP_NAME}:latest", "${APP_NAME}:${devTag}")
             }
@@ -148,6 +137,9 @@ pipeline {
           openshift.withCluster() {
             openshift.withProject("${NAMESPACE_DEV}") {
               sh "oc set image dc/${APP_NAME} ${APP_NAME}=${NAMESPACE_DEV}/${APP_NAME}:${devTag} --source=istag"
+              def dc = openshift.selector("dc", "${APP_NAME}")
+              dc.rollout().latest()
+              dc.rollout().status()
             }
           }
         }
@@ -157,8 +149,11 @@ pipeline {
       steps {
         echo "Running integration tests using curl."
         script {
+          sleep 30
           sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/"
           sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/"
+          echo "Populating the MLB Parks Data into the MongoDB database"
+          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/data/load/"
         }
       }
     }
@@ -166,7 +161,7 @@ pipeline {
       steps {
         echo "Archiving the container image to the nexus registry."
         script {
-          sh "skopeo copy --src-tls-verify=false --dest-tls-verify=false --src-creds openshift:${TOKEN} --dest-creds ${NEXUS_USER}:${NEXUS_PASSWORD} ${REGISTRY_URL}/${NAMESPACE_DEV}/${APP_NAME}:${devTag} ${NEXUS_REGISTRY_URL}/${APP_NAME}:${devTag}"
+          sh "skopeo copy --src-tls-verify=false --dest-tls-verify=false --src-creds openshift:${TOKEN} --dest-creds ${NEXUS_CREDENTIALS_USR}:${NEXUS_CREDENTIALS_PSW} ${REGISTRY_URL}/${NAMESPACE_DEV}/${APP_NAME}:${devTag} ${NEXUS_REGISTRY_URL}/${APP_NAME}:${devTag}"
         }
       }
     }
