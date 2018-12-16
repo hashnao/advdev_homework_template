@@ -6,7 +6,7 @@ pipeline {
       inheritFrom "maven"
       containerTemplate(
         name: "jnlp",
-        image: "${MAVEN_SLAVE_IMAGE}",
+        image: "${REGISTRY_URL}/${NAMESPACE_JENKINS}/${MAVEN_SLAVE_IMAGE}",
         resourceRequestMemory: "${JENKINS_SLAVE_MEMORY_REQUEST}",
         resourceLimitMemory: "${JENKINS_SLAVE_MEMORY_LIMIT}",
         resourceRequestCpu: "${JENKINS_SLAVE_CPU_REQUEST}",
