@@ -136,7 +136,7 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withProject("${NAMESPACE_DEV}") {
-              sh "oc set image dc/${APP_NAME} ${APP_NAME}=${NAMESPACE_DEV}/${APP_NAME}:${devTag} --source=istag"
+              sh "oc set image dc/${APP_NAME} ${APP_NAME}=${NAMESPACE_DEV}/${APP_NAME}:${devTag} --source=istag -n ${NAMESPACE_DEV}"
               def dc = openshift.selector("dc", "${APP_NAME}")
               dc.rollout().latest()
               dc.rollout().status()
