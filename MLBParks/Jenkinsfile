@@ -23,6 +23,7 @@ pipeline {
     mvnCmd = "mvn -s ./nexus_settings.xml"
     APP_NAME = "${APP_NAME}"
     APP_IMAGE = "${APP_IMAGE}"
+    BACKEND_SERVICE = "${BACKEND_SERVICE}"
     CLUSTER = "${CLUSTER}"
     GIT_SOURCE_URL = "${GIT_SOURCE_URL}"
     GIT_SOURCE_REF = "${GIT_SOURCE_REF}"
@@ -171,6 +172,50 @@ pipeline {
         echo "Archiving the container image to the nexus registry."
         script {
           sh "skopeo copy --src-tls-verify=false --dest-tls-verify=false --src-creds openshift:${TOKEN} --dest-creds ${NEXUS_CREDENTIALS_USR}:${NEXUS_CREDENTIALS_PSW} ${REGISTRY_URL}/${NAMESPACE_DEV}/${APP_NAME}:${devTag} ${NEXUS_REGISTRY_URL}/${APP_NAME}:${devTag}"
+        }
+      }
+    }
+    stage('Deploy Image to Prod') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${NAMESPACE_DEV}") {
+              echo "Promoting imagestream from development to production environment."
+              // Promote the imagestream into prod environment.
+              openshift.tag("${NAMESPACE_DEV}/${APP_NAME}:${devTag}", "${NAMESPACE_PROD}/${APP_NAME}:${devTag}")
+            }
+            openshift.withProject("${NAMESPACE_PROD}") {
+              echo "Deploying imagestream at production environment."
+              openshift.set("image", "dc/${APP_NAME}-blue", "${APP_NAME}=${NAMESPACE_PROD}/${APP_NAME}:${devTag}", "--source=istag")
+              openshift.set("image", "dc/${APP_NAME}-green", "${APP_NAME}=${NAMESPACE_PROD}/${APP_NAME}:${devTag}", "--source=istag")
+              def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
+              // The DC is set ConfigChange and a new deployment automatically begins
+              // when DC is changed so that it's not necessary to use "oc rollout latest is".
+              dcBlue.rollout().status()
+              def dcGreen = openshift.selector("dc", "${APP_NAME}-green")
+              dcGreen.rollout().status()
+            }
+          }
+        }
+      }
+    }
+    stage('Switch Blue/Green') {
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${NAMESPACE_PROD}") {
+              def parksMapRoute = sh(returnStdout: true, script: "curl ${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/appname/").trim()
+              // Check if the returned string contains "Parks Map (Green)"
+              echo "ParksMap Route: " + parksMapRoute
+              if (parksMapRoute.contains("ParksMap (Green)")) {
+                openshift.label("service", "${APP_NAME}-green", "type-")
+                openshift.label("service", "${APP_NAME}-blue", "type=${BACKEND_SERVICE}")
+              } else {
+                openshift.label("service", "${APP_NAME}-blue", "type-")
+                openshift.label("service", "${APP_NAME}-green", "type=${BACKEND_SERVICE}")
+              }
+            }
+          }
         }
       }
     }
