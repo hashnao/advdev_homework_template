@@ -186,8 +186,8 @@ pipeline {
             }
             openshift.withProject("${NAMESPACE_PROD}") {
               echo "Deploying imagestream at production environment."
-              openshift.set("image", "dc/${APP_NAME}-blue", "${APP_NAME}=${NAMESPACE_PROD}/${APP_NAME}:${devTag}", "--source=istag")
-              openshift.set("image", "dc/${APP_NAME}-green", "${APP_NAME}=${NAMESPACE_PROD}/${APP_NAME}:${devTag}", "--source=istag")
+              openshift.set("image", "dc/${APP_NAME}-blue", "${APP_NAME}-blue=${NAMESPACE_PROD}/${APP_NAME}:${devTag}", "--source=istag")
+              openshift.set("image", "dc/${APP_NAME}-green", "${APP_NAME}-green=${NAMESPACE_PROD}/${APP_NAME}:${devTag}", "--source=istag")
               def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
               // The DC is set ConfigChange and a new deployment automatically begins
               // when DC is changed so that it's not necessary to use "oc rollout latest is".
