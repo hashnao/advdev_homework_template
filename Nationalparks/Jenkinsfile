@@ -204,10 +204,10 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withProject("${NAMESPACE_PROD}") {
-              def parksMapRoute = sh(returnStdout: true, script: "curl ${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/info/").trim()
-              // Check if the returned string contains "Parks Map (Green)"
-              echo "ParksMap Route: " + parksMapRoute
-              if (parksMapRoute.contains("ParksMap (Green)")) {
+              def nationalMapRoute = sh(returnStdout: true, script: "curl ${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/info/").trim()
+              // Check if the returned string contains "National Parks (Green)"
+              echo "Nationalparks Route: " + nationalMapRoute
+              if (nationalMapRoute.contains("National Parks(Green)")) {
                 openshift.label("service", "${APP_NAME}-green", "type-")
                 openshift.label("service", "${APP_NAME}-blue", "type=${BACKEND_SERVICE}")
               } else {
