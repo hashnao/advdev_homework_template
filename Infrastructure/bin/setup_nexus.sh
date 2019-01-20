@@ -6,15 +6,21 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-GUID=$1
-echo "Setting up Nexus in project $GUID-nexus"
+GUID=${1:-}
+
+# Load variables and fucntions
+source ./utils.sh
+
+echo "--- Setting up Nexus in project ${NAMESPACE_NEXUS}. ---"
 
 # Set up nexus
-oc project ${GUID}-nexus
+oc project ${NAMESPACE_NEXUS}
 oc new-app -f ../templates/nexus3-persistent.yml
+oc expose service nexus-registry
 oc rollout status dc nexus
 
-cat >> EOF
-You need to enable a docker registry through the nexus console because a registry is not created by default.
-Check the URL with "oc get route nexus", then log in to the console to create a docker registry.
+cat << EOF
+Log in to the nexus admin console and create a container image registry.
+The console URL is as follows.
+http://nexus-${NAMESPACE_NEXUS}.${CLUSTER}/#admin/repository/repositories
 EOF

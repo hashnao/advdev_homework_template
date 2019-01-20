@@ -92,15 +92,6 @@ objects:
     test: false
     triggers:
     - type: ConfigChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - ${APP_NAME}
-        from:
-          kind: ImageStreamTag
-          name: ${APP_NAME}:${APP_IMAGESTREAMTAG}
-          namespace: ${NAMESPACE}
-      type: ImageChange
   status: {}
 - apiVersion: v1
   kind: Service
@@ -127,11 +118,10 @@ objects:
     annotations: {}
     labels:
       app: ${APP_NAME}
-      type: ${BACKEND_SERVICE}
     name: ${APP_NAME}
   spec:
     tls:
-      insecureEdgeTerminationPolicy: Redirect
+      insecureEdgeTerminationPolicy: Allow
       termination: edge
     to:
       kind: Service
@@ -141,6 +131,8 @@ objects:
   status: {}
 parameters:
 - displayName: Project Namespace
+  description:
+    Set either of the namespaces according to development or production environment.
   name: NAMESPACE
   value: ""
   required: true
@@ -159,13 +151,14 @@ parameters:
     Set "National Parks (Dev)" for Nationalparks
     Set "ParksMap (Dev)" for ParksMap
     For prod,
-    Set "MLB Parks (Green/Blue)"" for MLBParks
+    Set "MLB Parks (Green/Blue)" for MLBParks
     Set "National Parks (Blue/Green)" Nationalparks
     Set "ParksMap (Blue/Green)" for ParksMap
   name: APP_DESCRIPTION
   value: ""
   required: true
 - displayName: Label
-  description: Set parksmap-backend only for ParksMap
+  description:
+    Set parksmap-backend on the backend services for ParksMap.
   name: BACKEND_SERVICE
-  value: ""
+  value: "parksmap-backend"

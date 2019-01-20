@@ -6,10 +6,13 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-GUID=$1
+GUID=${1:-}
+
+# Load variables and fucntions
+source ./utils.sh
+
 echo "Removing all Homework Projects for GUID=$GUID"
-oc delete project $GUID-nexus
-oc delete project $GUID-sonarqube
-oc delete project $GUID-jenkins
-oc delete project $GUID-parks-dev
-oc delete project $GUID-parks-prod
+NAMESPACES="${NAMESPACE_JENKINS} ${NAMESPACE_NEXUS} ${NAMESPACE_SONAR} ${NAMESPACE_DEV} ${NAMESPACE_PROD}"
+for NAMESPACE in ${NAMESPACES} ; do
+  oc delete project ${NAMESPACE}
+done

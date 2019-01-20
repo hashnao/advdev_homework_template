@@ -6,11 +6,15 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-GUID=$1
-echo "Setting up Sonarqube in project $GUID-sonarqube"
+GUID=${1:-}
+
+# Load variables and fucntions
+source ./utils.sh
+
+echo "--- Setting up Sonarqube in project ${NAMESPACE_SONAR}. ---"
 
 # Set up SonarQube
-oc project ${GUID}-sonarqube
+oc project ${NAMESPACE_SONAR}
 POSTGRESQL_USER=sonar
 POSTGRESQL_PASSWORD=sonar
 POSTGRESQL_DATABASE=sonar

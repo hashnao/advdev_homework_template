@@ -8,13 +8,20 @@ if [ "$#" -ne 1 ]; then
 fi
 
 GUID=$1
-echo "Resetting Parks Production Environment in project ${GUID}-parks-prod to Green Services"
 
-# Code to reset the parks production environment to make
-# all the green services/routes active.
-# This script will be called in the grading pipeline
-# if the pipeline is executed without setting
-# up the whole infrastructure to guarantee a Blue
-# rollout followed by a Green rollout.
+# Load variables and fucntions
+source ./utils.sh
 
-# To be Implemented by Student
+echo "--- Resetting Parks Production Environment in project ${NAMESPACE_PROD} to Green Services. ---"
+
+oc project ${NAMESPACE_PROD}
+# For backend services
+BACKEND_APPLICATIONS="mlbparks nationalparks"
+for i in ${BACKEND_APPLICATIONS} ; do
+  oc label service ${i}-blue type-
+  oc label service ${i}-green type=${BACKEND_SERVICE}
+done
+
+# For route
+_APP_NAME=parksmap
+oc set route-backends ${_APP_NAME} ${_APP_NAME}-blue=0 ${_APP_NAME}-green=100
