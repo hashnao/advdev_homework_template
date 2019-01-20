@@ -77,3 +77,9 @@ deploy_application() {
 remove_backend_service_label() {
   oc label service ${APP_NAME} type-
 }
+
+switch_green() {
+  oc delete route ${APP_NAME}
+  oc expose service --name=${_APP_NAME} ${_APP_NAME}-green
+  oc set route-backends ${_APP_NAME} ${_APP_NAME}-blue=0 ${_APP_NAME}-green=100
+}

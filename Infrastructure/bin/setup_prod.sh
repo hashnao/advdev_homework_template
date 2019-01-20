@@ -44,11 +44,14 @@ _APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_NAME=$(echo ${_APP_NAME}-blue)
 APP_DESCRIPTION="MLB Parks (Blue)"
 deploy_application
+oc delete route ${APP_NAME}
 
 # For MLBParks (Green)
 APP_NAME=$(echo ${_APP_NAME}-green)
 APP_DESCRIPTION="MLB Parks (Green)"
 deploy_application
+oc delete route ${APP_NAME}
+switch_green
 
 # For Nationalparks (Blue)
 CONTEXT_DIR=Nationalparks
@@ -56,11 +59,14 @@ _APP_NAME=$(echo ${CONTEXT_DIR} | tr '[:upper:]' '[:lower:]')
 APP_NAME=$(echo ${_APP_NAME}-blue)
 APP_DESCRIPTION="National Parks (Blue)"
 deploy_application
+oc delete route ${APP_NAME}
 
 # For Nationalparks (Green)
 APP_NAME=$(echo ${_APP_NAME}-green)
 APP_DESCRIPTION="National Parks (Green)"
 deploy_application
+oc delete route ${APP_NAME}
+switch_green
 
 # For ParksMap (Blue)
 CONTEXT_DIR=ParksMap
@@ -77,7 +83,4 @@ APP_DESCRIPTION="ParksMap (Green)"
 BACKEND_SERVICE=""
 deploy_application
 oc delete route ${APP_NAME}
-
-# Make the Green service active initially to guarantee a Blue rollout upon the first pipeline run
-oc expose service --name=${_APP_NAME} ${_APP_NAME}-green
-oc set route-backends ${_APP_NAME} ${_APP_NAME}-blue=0 ${_APP_NAME}-green=100
+switch_green
