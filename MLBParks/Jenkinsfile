@@ -208,11 +208,9 @@ pipeline {
               // Check if the returned string contains "MLB Parks (Green)"
               echo "MLBParks Route: " + mlbParksRoute
               if (mlbParksRoute.contains("MLB Parks (Green)")) {
-                openshift.label("service", "${APP_NAME}-green", "type-")
-                openshift.label("service", "${APP_NAME}-blue", "type=${BACKEND_SERVICE}")
+                openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=100", "${APP_NAME}-green=0")
               } else {
-                openshift.label("service", "${APP_NAME}-blue", "type-")
-                openshift.label("service", "${APP_NAME}-green", "type=${BACKEND_SERVICE}")
+                openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=0", "${APP_NAME}-green=100")
               }
             }
           }
