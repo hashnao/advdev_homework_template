@@ -8,7 +8,7 @@ if [ "$#" -ne 3 ]; then
 fi
 
 # Load variables and fucntions
-source ./utils.sh
+source ${BIN_PATH:-./Infrastructure/bin}/utils.sh
 
 # Variable arguments
 GUID=${1:-}

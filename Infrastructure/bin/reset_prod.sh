@@ -10,7 +10,7 @@ fi
 GUID=$1
 
 # Load variables and fucntions
-source ./utils.sh
+source ${BIN_PATH:-./Infrastructure/bin}/utils.sh
 
 echo "--- Resetting Parks Production Environment in project ${NAMESPACE_PROD} to Green Services. ---"
 

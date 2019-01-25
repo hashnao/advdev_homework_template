@@ -9,7 +9,7 @@ fi
 GUID=${1:-}
 
 # Load variables and fucntions
-source ./utils.sh
+source ${BIN_PATH:-./Infrastructure/bin}/utils.sh
 
 echo "--- Setting up Sonarqube in project ${NAMESPACE_SONAR}. ---"
 

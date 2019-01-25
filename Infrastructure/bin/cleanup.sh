@@ -9,7 +9,7 @@ fi
 GUID=${1:-}
 
 # Load variables and fucntions
-source ./utils.sh
+source ${BIN_PATH:-./Infrastructure/bin}/utils.sh
 
 echo "Removing all Homework Projects for GUID=$GUID"
 NAMESPACES="${NAMESPACE_JENKINS} ${NAMESPACE_NEXUS} ${NAMESPACE_SONAR} ${NAMESPACE_DEV} ${NAMESPACE_PROD}"

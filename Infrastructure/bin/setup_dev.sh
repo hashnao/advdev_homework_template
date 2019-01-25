@@ -9,13 +9,16 @@ fi
 GUID=${1:-}
 
 # Load variables and fucntions
-source ./utils.sh
+source ${BIN_PATH:-./Infrastructure/bin}/utils.sh
 
 echo "--- Setting up Parks Development Environment in project ${NAMESPACE_DEV}. ---"
 oc project ${NAMESPACE_DEV}
 
 # Grant permissions to the Jenkins service account
 oc adm policy add-role-to-user edit system:serviceaccount:${NAMESPACE_JENKINS}:jenkins -n ${NAMESPACE_DEV}
+
+# Grant the correct permissions for the ParksMap application to read back-end services (see the associated README file)
+oc adm policy add-role-to-user view -z default -n ${NAMESPACE_DEV}
 
 # Create a MongoDB database
 MONGODB_TEMPLATE="../templates/mongodb-persistent.yml"

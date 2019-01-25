@@ -10,7 +10,7 @@ GUID=${1:-}
 USER=${2:-}
 
 # Load variables and fucntions
-source ./utils.sh
+source ${BIN_PATH:-./Infrastructure/bin}/utils.sh
 
 if [ "$(oc whoami)" != "${USER}" ]; then
   echo "You need to switch to ${USER}"
@@ -23,4 +23,3 @@ oc new-project ${NAMESPACE_SONAR} --display-name="${GUID} AdvDev Homework Sonarq
 oc new-project ${NAMESPACE_JENKINS} --display-name="${GUID} AdvDev Homework Jenkins"
 oc new-project ${NAMESPACE_DEV} --display-name="${GUID} AdvDev Homework Parks Development"
 oc new-project ${NAMESPACE_PROD} --display-name="${GUID} AdvDev Homework Parks Production"
-

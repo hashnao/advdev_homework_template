@@ -9,7 +9,7 @@ fi
 GUID=${1:-}
 
 # Load variables and fucntions
-source ./utils.sh
+source ${BIN_PATH:-./Infrastructure/bin}/utils.sh
 
 echo "--- Setting up Parks Production Environment in project ${NAMESPACE_PROD}. ---"
 
@@ -26,7 +26,7 @@ oc adm policy add-role-to-user edit system:serviceaccount:${NAMESPACE_JENKINS}:j
 oc adm policy add-role-to-user system:image-puller system:serviceaccounts:${NAMESPACE_PROD} -n ${NAMESPACE_DEV}
 
 # Grant the correct permissions for the ParksMap application to read back-end services (see the associated README file)
-oc policy add-role-to-user view --serviceaccount=default -n ${NAMESPACE_PROD}
+oc adm policy add-role-to-user view -z default -n ${NAMESPACE_PROD}
 
 # Set up a replicated MongoDB database via StatefulSet with at least three replicas
 MONGODB_TEMPLATE="../templates/mongodb-petset-persistent.yml"
