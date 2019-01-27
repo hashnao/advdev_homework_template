@@ -112,8 +112,8 @@ pipeline {
               def result = bc.logs("-f")
               // Filter non-BuildConfig objects and create selector which will find builds related to the BuildConfig
               def buildSelector = bc.related("builds")
-              // Throw exception after 5 minutes
-              timeout(10) {
+              // Throw exception after 1 minutes
+              timeout(1) {
                 buildSelector.untilEach(1) {
                   return (it.object().status.phase == "Complete")
                 }
