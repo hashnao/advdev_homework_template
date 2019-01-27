@@ -112,12 +112,14 @@ pipeline {
               def result = bc.logs("-f")
               // Filter non-BuildConfig objects and create selector which will find builds related to the BuildConfig
               def buildSelector = bc.related("builds")
+              /*
               // Throw exception after 5 minutes
               timeout(10) {
                 buildSelector.untilEach(1) {
                   return (it.object().status.phase == "Complete")
                 }
               }
+              */
               echo "Builds have been completed: ${buildSelector.names()}"
               // Show exactly what oc command was executed.
               echo "Logs executed: ${result.actions[0].cmd}"
@@ -141,7 +143,7 @@ pipeline {
               def dc = openshift.selector("dc", "${APP_NAME}")
               // The DC is set ConfigChange and a new deployment automatically begins
               // when DC is changed so that it's not necessary to use "oc rollout latest is".
-              dc.rollout().status()
+              dc.rollout().status("-w")
             }
           }
         }
@@ -154,14 +156,6 @@ pipeline {
           sleep 30
           sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/"
           sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/"
-        }
-      }
-    }
-    stage('Populate Data') {
-      steps {
-        echo "Populating the MLB Parks Data into the MongoDB database"
-        script {
-          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/data/load/"
         }
       }
     }
@@ -189,9 +183,9 @@ pipeline {
               def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
               // The DC is set ConfigChange and a new deployment automatically begins
               // when DC is changed so that it's not necessary to use "oc rollout latest is".
-              dcBlue.rollout().status()
+              dcBlue.rollout().status("-w")
               def dcGreen = openshift.selector("dc", "${APP_NAME}-green")
-              dcGreen.rollout().status()
+              dcGreen.rollout().status("-w")
             }
           }
         }
