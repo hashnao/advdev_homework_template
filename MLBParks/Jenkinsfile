@@ -46,7 +46,7 @@ pipeline {
     TOKEN = credentials("${JENKINS_DEFAULT_CREDENTIALS_ID}")
   }
   options {
-    timeout(time: 20, unit: 'MINUTES')
+    timeout(time: 30, unit: 'MINUTES')
   }
   stages {
     stage('Variable Check') {
@@ -113,7 +113,7 @@ pipeline {
               // Filter non-BuildConfig objects and create selector which will find builds related to the BuildConfig
               def buildSelector = bc.related("builds")
               // Throw exception after 5 minutes
-              timeout(5) {
+              timeout(10) {
                 buildSelector.untilEach(1) {
                   return (it.object().status.phase == "Complete")
                 }
