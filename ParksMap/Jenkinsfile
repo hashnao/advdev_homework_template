@@ -154,16 +154,6 @@ pipeline {
           sleep 30
           sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/"
           sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/"
-          echo "Populating the MLB Parks Data into the MongoDB database"
-          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/data/load/"
-        }
-      }
-    }
-    stage('Populate Data') {
-      steps {
-        echo "Populating the MLB Parks Data into the MongoDB database"
-        script {
-          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/data/load/"
         }
       }
     }
