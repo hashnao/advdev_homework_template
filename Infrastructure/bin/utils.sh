@@ -1,7 +1,7 @@
 #!/bin/#!/usr/bin/env bash
 
 # Variables
-TEMPLATE="../templates/application-template.yml"
+TEMPLATE="${TEMPLATE_PATH:-./Infrastructure/templates/application-template.yml}"
 NAMESPACE_NEXUS="${GUID}-nexus"
 NAMESPACE_SONAR="${GUID}-sonar"
 NAMESPACE_JENKINS="${GUID}-jenkins"

@@ -15,7 +15,7 @@ echo "--- Setting up Nexus in project ${NAMESPACE_NEXUS}. ---"
 
 # Set up nexus
 oc project ${NAMESPACE_NEXUS}
-oc new-app -f ../templates/nexus3-persistent.yml
+oc new-app -f ${TEMPLATE_PATH:-./Infrastructure/templates/nexus3-persistent.yml}
 oc expose service nexus-registry
 oc rollout status dc nexus
 

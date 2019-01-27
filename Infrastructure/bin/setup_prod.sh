@@ -29,7 +29,7 @@ oc adm policy add-role-to-user system:image-puller system:serviceaccounts:${NAME
 oc adm policy add-role-to-user view -z default -n ${NAMESPACE_PROD}
 
 # Set up a replicated MongoDB database via StatefulSet with at least three replicas
-MONGODB_TEMPLATE="../templates/mongodb-petset-persistent.yml"
+MONGODB_TEMPLATE="${TEMPLATE_PATH:-./Infrastructure/templates/mongodb-petset-persistent.yml}"
 DB_REPLICASET="rs0"
 create_mongodb
 

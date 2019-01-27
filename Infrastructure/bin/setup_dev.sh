@@ -21,7 +21,7 @@ oc adm policy add-role-to-user edit system:serviceaccount:${NAMESPACE_JENKINS}:j
 oc adm policy add-role-to-user view -z default -n ${NAMESPACE_DEV}
 
 # Create a MongoDB database
-MONGODB_TEMPLATE="../templates/mongodb-persistent.yml"
+MONGODB_TEMPLATE="${TEMPLATE_PATH:-./Infrastructure/templates/mongodb-persistent.yml}"
 create_mongodb
 
 # application-template.yml requires NAMESPACE variable for execNewPod to load data.

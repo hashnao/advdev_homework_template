@@ -25,7 +25,7 @@ oc new-app --template=postgresql-persistent \
 -p POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
 oc rollout status dc postgresql
 
-oc new-app -f ../templates/sonarqube-persistent.yml \
+oc new-app -f ${TEMPLATE_PATH:-./Infrastructure/templates/sonarqube-persistent.yml} \
 -p POSTGRESQL_USER=${POSTGRESQL_USER} \
 -p POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD} \
 -p POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}

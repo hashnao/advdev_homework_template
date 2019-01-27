@@ -35,7 +35,7 @@ REGISTRY_URL="docker://docker-registry.default.svc:5000"
 
 # Functions
 create_jenkins_slave_image() {
-  cat ../dockerfiles/Dockerfile | oc new-build --dockerfile=- --to=${MAVEN_SLAVE_IMAGE}
+  cat ${DOCKERFILE_PATH:-./Infrastructure/dockerfiles/Dockerfile} | oc new-build --dockerfile=- --to=${MAVEN_SLAVE_IMAGE}
   oc label is ${MAVEN_SLAVE_IMAGE} role=jenkins-slave
 }
 
@@ -103,7 +103,7 @@ oc project ${NAMESPACE_JENKINS}
 create_jenkins_slave_image
 
 # Set up Jenkins with sufficient resources
-TEMPLATE="../templates/jenkins-persistent.yml"
+TEMPLATE="${TEMPLATE_PATH:-./Infrastructure/templates/jenkins-persistent.yml}"
 deploy_jenkins
 
 # Create Jenkins credentials for Nexus via the REST API
