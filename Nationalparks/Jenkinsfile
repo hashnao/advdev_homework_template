@@ -153,9 +153,22 @@ pipeline {
       steps {
         echo "Running integration tests using curl."
         script {
-          sleep 30
-          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/"
-          sh "curl -k https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/"
+          // /ws/healthz/
+          def healthRoute = sh (returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
+          echo "Integration Test: " + healthRoute
+          if(healthRoute.contains("OK")) {
+            echo "Application health successfully validated."
+          } else {
+            error("Application health returned unexpected strings.")
+          }
+          // /ws/info/
+          def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/").trim()
+          echo "Integration Test: " + infoRoute
+          if(healthRoute.contains("National Parks (Dev)")) {
+            echo "Application health successfully validated."
+          } else {
+            error("Application health returned unexpected strings.")
+          }
         }
       }
     }
@@ -196,10 +209,10 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withProject("${NAMESPACE_PROD}") {
-              def nationalMapRoute = sh(returnStdout: true, script: "curl ${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/info/").trim()
+              def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/info/").trim()
               // Check if the returned string contains "National Parks (Green)"
-              echo "Nationalparks Route: " + nationalMapRoute
-              if (nationalMapRoute.contains("National Parks(Green)")) {
+              echo "Route: " + infoRoute
+              if (infoRoute.contains("National Parks(Green)")) {
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=100", "${APP_NAME}-green=0")
               } else {
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=0", "${APP_NAME}-green=100")
