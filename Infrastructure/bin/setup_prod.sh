@@ -75,7 +75,6 @@ APP_NAME=$(echo ${_APP_NAME}-blue)
 APP_DESCRIPTION="ParksMap (Blue)"
 BACKEND_SERVICE=""
 deploy_application
-oc set deployment-hook dc/${APP_NAME} --remove --post
 oc delete route ${APP_NAME}
 
 # For ParksMap (Green)
@@ -83,6 +82,5 @@ APP_NAME=$(echo ${_APP_NAME}-green)
 APP_DESCRIPTION="ParksMap (Green)"
 BACKEND_SERVICE=""
 deploy_application
-oc set deployment-hook dc/${APP_NAME} --remove --post
 oc delete route ${APP_NAME}
 switch_green

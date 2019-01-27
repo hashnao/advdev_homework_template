@@ -92,6 +92,14 @@ pipeline {
         }
       }
     }
+    stage('Upload Artifacts to Nexus') {
+      steps {
+        echo "Archiving the artifacts to the nexus repository."
+        dir("${CONTEXT_DIR}") {
+          sh "${mvnCmd} deploy -DskipTests=true -DaltDeploymentRepository=nexus::default::${NEXUS_URL}/${NEXUS_URI_MAVEN}/"
+        }
+      }
+    }
     stage('Build Container Image') {
       steps {
         echo "Building a container image ${devTag}."

@@ -60,5 +60,4 @@ remove_buildconfig_binary
 create_buildconfig_binary
 remove_application
 deploy_application
-oc set deployment-hook dc/${APP_NAME} --remove --post
 start_pipeline
