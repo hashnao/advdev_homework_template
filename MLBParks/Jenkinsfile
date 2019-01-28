@@ -210,12 +210,14 @@ pipeline {
           openshift.withCluster() {
             openshift.withProject("${NAMESPACE_PROD}") {
               def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/info/").trim()
-              // Check if the returned string contains "MLB Parks (Green)"
+              // Check if the returned string contains Green or Blue
               echo "Route: " + infoRoute
               if (infoRoute.contains("MLB Parks (Green)")) {
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=100", "${APP_NAME}-green=0")
-              } else {
+              } else if (infoRoute.contains("MLB Parks (Blue)")) {
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=0", "${APP_NAME}-green=100")
+              } else {
+                error("Unexpected strings contained.")
               }
             }
           }
