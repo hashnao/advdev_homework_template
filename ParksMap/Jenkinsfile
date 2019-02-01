@@ -222,17 +222,17 @@ pipeline {
               // Check if the returned string contains Green or Blue
               echo "Route: " + parksMapRoute
               if (parksMapRoute.contains("ParksMap (Green)")) {
-                def dc = openshift.selector("dc", "${APP_NAME}-blue")
+                def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
                 dc.scale("--replicas=1")
                 dc.rollout().status("-w")
-                def dc = openshift.selector("dc", "${APP_NAME}-green")
+                def dcGreen = openshift.selector("dc", "${APP_NAME}-green")
                 dc.scale("--replicas=0")
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=100", "${APP_NAME}-green=0")
               } else if (infoRoute.contains("ParksMap (Blue)")) {
-                def dc = openshift.selector("dc", "${APP_NAME}-green")
+                def dcGreen = openshift.selector("dc", "${APP_NAME}-green")
                 dc.scale("--replicas=1")
                 dc.rollout().status("-w")
-                def dc = openshift.selector("dc", "${APP_NAME}-blue")
+                def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
                 dc.scale("--replicas=0")
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=0", "${APP_NAME}-green=100")
               } else {
