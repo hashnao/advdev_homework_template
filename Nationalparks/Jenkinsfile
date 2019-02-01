@@ -140,6 +140,7 @@ pipeline {
           openshift.withCluster() {
             openshift.withProject("${NAMESPACE_DEV}") {
               openshift.set("image", "dc/${APP_NAME}", "${APP_NAME}=${NAMESPACE_DEV}/${APP_NAME}:${devTag}", "--source=istag")
+              openshift.scale("dc", "${APP_NAME}", "--replicas=1")
               def dc = openshift.selector("dc", "${APP_NAME}")
               // The DC is set ConfigChange and a new deployment automatically begins
               // when DC is changed so that it's not necessary to use "oc rollout latest is".
@@ -194,8 +195,6 @@ pipeline {
               openshift.set("image", "dc/${APP_NAME}-blue", "${APP_NAME}-blue=${NAMESPACE_PROD}/${APP_NAME}:${devTag}", "--source=istag")
               openshift.set("image", "dc/${APP_NAME}-green", "${APP_NAME}-green=${NAMESPACE_PROD}/${APP_NAME}:${devTag}", "--source=istag")
               def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
-              // The DC is set ConfigChange and a new deployment automatically begins
-              // when DC is changed so that it's not necessary to use "oc rollout latest is".
               dcBlue.rollout().status("-w")
               def dcGreen = openshift.selector("dc", "${APP_NAME}-green")
               dcGreen.rollout().status("-w")
@@ -213,8 +212,14 @@ pipeline {
               // Check if the returned string contains Green or Blue
               echo "Route: " + infoRoute
               if (infoRoute.contains("National Parks (Green)")) {
+                openshift.scale("dc", "${APP_NAME}-blue", "--replicas=1")
+                openshift.selector("dc", "${APP_NAME}-blue").rollout().status("-w")
+                openshift.scale("dc", "${APP_NAME}-green", "--replicas=0")
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=100", "${APP_NAME}-green=0")
               } else if (infoRoute.contains("National Parks (Blue)")) {
+                openshift.scale("dc", "${APP_NAME}-green", "--replicas=1")
+                openshift.selector("dc", "${APP_NAME}-green").rollout().status("-w")
+                openshift.scale("dc", "${APP_NAME}-blue", "--replicas=0")
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=0", "${APP_NAME}-green=100")
               } else {
                 error("Unexpected strings contained.")
