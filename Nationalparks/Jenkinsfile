@@ -155,21 +155,28 @@ pipeline {
       steps {
         echo "Running integration tests using curl."
         script {
-          // /ws/healthz/
-          def healthRoute = sh (returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
-          echo "Integration Test: " + healthRoute
-          if (healthRoute.contains("OK")) {
-            echo "Application health successfully validated."
-          } else {
-            error("Application health returned unexpected strings.")
-          }
-          // /ws/info/
-          def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/").trim()
-          echo "Integration Test: " + infoRoute
-          if (infoRoute.contains("National Parks (Dev)")) {
-            echo "Application health successfully validated."
-          } else {
-            error("Application health returned unexpected strings.")
+          // Throw exception after 1 minutes
+          timeout(1) {
+            waitUntil {
+              try {
+                // /ws/healthz/
+                def healthRoute = sh (returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
+                echo "Integration Test: " + healthRoute
+                if (healthRoute.contains("OK")) {
+                  echo "Application health successfully validated."
+                } else {
+                  error("Application health returned unexpected strings.")
+                }
+                // /ws/info/
+                def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/").trim()
+                echo "Integration Test: " + infoRoute
+                if (infoRoute.contains("National Parks (Dev)")) {
+                  echo "Application health successfully validated."
+                } else {
+                  error("Application health returned unexpected strings.")
+                }
+              }
+            }
           }
         }
       }
