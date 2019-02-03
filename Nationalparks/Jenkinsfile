@@ -155,7 +155,7 @@ pipeline {
       steps {
         echo "Running integration tests using curl."
         script {
-          retry(3) {
+          waitUntil() {
             // /ws/healthz/
             def healthRoute = sh (returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
             echo "Integration Test: " + healthRoute
