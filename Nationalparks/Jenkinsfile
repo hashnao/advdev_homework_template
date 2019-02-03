@@ -238,10 +238,8 @@ pipeline {
                 // Changing route backend
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=100", "${APP_NAME}-green=0")
                 // Changing service backend label
-                def serviceBlue = openshift.selector("service", "${APP_NAME}-blue")
-                serviceBlue.label("type=parksmap-backend", "--overwrite")
-                def serviceGreen = openshift.selector("service", "${APP_NAME}-green")
-                serviceGreen.label("type-")
+                openshift.selector("service", "${APP_NAME}-blue").label([type:"parksmap-backend"], "--overwrite")
+                openshift.selector("service", "${APP_NAME}-green").label([type:"-"])
               } else if (infoRoute.contains("National Parks (Blue)")) {
                 echo "Switcing from Blue to Green"
                 // Changing pod replica
@@ -252,6 +250,9 @@ pipeline {
                 dcBlue.scale("--replicas=0")
                 // Changing route backend
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=0", "${APP_NAME}-green=100")
+                // Changing service backend label
+                openshift.selector("service", "${APP_NAME}-green").label([type:"parksmap-backend"], "--overwrite")
+                openshift.selector("service", "${APP_NAME}-blue").label([type:"-"])
               } else {
                 error("Unexpected strings contained.")
               }
