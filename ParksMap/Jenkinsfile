@@ -178,7 +178,7 @@ pipeline {
                 // /ws/backends/list/
                 sh "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/backends/list/"
               } catch (exception) {
-                return false
+                error "Error encountered: ${exception}"
               }
             }
           }

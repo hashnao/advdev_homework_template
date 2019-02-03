@@ -176,7 +176,7 @@ pipeline {
                   error("Application health returned unexpected strings.")
                 }
               } catch (exception) {
-                return false
+                error "Error encountered: ${exception}"
               }
             }
           }
