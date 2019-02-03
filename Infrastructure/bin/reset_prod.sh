@@ -25,7 +25,7 @@ done
 # For backend services
 BACKEND_APPLICATIONS="mlbparks nationalparks"
 for i in ${BACKEND_APPLICATIONS} ; do
-  oc label service ${i}-blue type-
+  oc label service ${i}-blue type="" --overwrite
   oc label service ${i}-green type=${BACKEND_SERVICE} --overwrite
 done
 
