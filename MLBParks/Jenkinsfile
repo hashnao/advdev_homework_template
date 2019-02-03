@@ -175,6 +175,8 @@ pipeline {
                 } else {
                   error("Application health returned unexpected strings.")
                 }
+              } catch (exception) {
+                return false
               }
             }
           }
