@@ -229,20 +229,34 @@ pipeline {
               echo "Route: " + infoRoute
               if (infoRoute.contains("MLB Parks (Green)")) {
                 echo "Swiching from Green to Blue"
+                // Changing pod replica
                 def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
                 dcBlue.scale("--replicas=1")
                 dcBlue.rollout().status("-w")
                 def dcGreen = openshift.selector("dc", "${APP_NAME}-green")
                 dcGreen.scale("--replicas=0")
+                // Changing route backend
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=100", "${APP_NAME}-green=0")
+                // Changing service backend label
+                def serviceBlue = openshift.selector("service", "${APP_NAME}-blue")
+                serviceBlue.label("type=parksmap-backend", "--overwrite")
+                def serviceGreen = openshift.selector("service", "${APP_NAME}-green")
+                serviceGreen.label("type-")
               } else if (infoRoute.contains("MLB Parks (Blue)")) {
                 echo "Swiching from Blue to Green"
+                // Changing pod replica
                 def dcGreen = openshift.selector("dc", "${APP_NAME}-green")
                 dcGreen.scale("--replicas=1")
                 dcGreen.rollout().status("-w")
                 def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
                 dcBlue.scale("--replicas=0")
+                // Changing route backend
                 openshift.set("route-backends", "${APP_NAME}", "${APP_NAME}-blue=0", "${APP_NAME}-green=100")
+                // Changing service backend label
+                def serviceGreen = openshift.selector("service", "${APP_NAME}-green")
+                serviceGreen.label("type=parksmap-backend", "--overwrite")
+                def serviceBlue = openshift.selector("service", "${APP_NAME}-blue")
+                serviceBlue.label("type-")
               } else {
                 error("Unexpected strings contained.")
               }
