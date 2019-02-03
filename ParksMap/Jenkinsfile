@@ -176,8 +176,9 @@ pipeline {
               } else {
                 error("Application health returned unexpected strings.")
               }
+              // Enable if backend services pods are always running.
               // /ws/backends/list/
-              sh "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/backends/list/"
+              //sh "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/backends/list/"
             }
           }
         }
