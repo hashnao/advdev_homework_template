@@ -158,28 +158,24 @@ pipeline {
           // Throw exception after 1 minutes
           timeout(1) {
             waitUntil {
-              try {
-                // /ws/healthz/
-                def healthRoute = sh (returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
-                echo "Integration Test: " + healthRoute
-                if (healthRoute.contains("OK")) {
-                  echo "Application health successfully validated."
-                } else {
-                  error("Application health returned unexpected strings.")
-                }
-                // /ws/appname/
-                def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/appname/").trim()
-                echo "Integration Test: " + infoRoute
-                if (infoRoute.contains("ParksMap (Dev)")) {
-                  echo "Application health successfully validated."
-                } else {
-                  error("Application health returned unexpected strings.")
-                }
-                // /ws/backends/list/
-                sh "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/backends/list/"
-              } catch (exception) {
-                error "Error encountered: ${exception}"
+              // /ws/healthz/
+              def healthRoute = sh (returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
+              echo "Integration Test: " + healthRoute
+              if (healthRoute.contains("OK")) {
+                echo "Application health successfully validated."
+              } else {
+                error("Application health returned unexpected strings.")
               }
+              // /ws/appname/
+              def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/appname/").trim()
+              echo "Integration Test: " + infoRoute
+              if (infoRoute.contains("ParksMap (Dev)")) {
+                echo "Application health successfully validated."
+              } else {
+                error("Application health returned unexpected strings.")
+              }
+              // /ws/backends/list/
+              sh "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/backends/list/"
             }
           }
         }
