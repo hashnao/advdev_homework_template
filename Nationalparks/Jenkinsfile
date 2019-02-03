@@ -163,6 +163,7 @@ pipeline {
               echo "Integration Test: " + healthRoute
               if (healthRoute.contains("OK")) {
                 echo "Application health successfully validated."
+                true
               } else {
                 error("Application health returned unexpected strings.")
               }
@@ -171,6 +172,7 @@ pipeline {
               echo "Integration Test: " + infoRoute
               if (infoRoute.contains("National Parks (Dev)")) {
                 echo "Application health successfully validated."
+                true
               } else {
                 error("Application health returned unexpected strings.")
               }
