@@ -157,7 +157,7 @@ pipeline {
         script {
           waitUntil() {
             // /ws/healthz/
-            def healthRoute = sh (returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
+            def healthRoute = sh (returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
             echo "Integration Test: " + healthRoute
             if (healthRoute.contains("OK")) {
               echo "Application health successfully validated."
@@ -166,7 +166,7 @@ pipeline {
               error("Application health returned unexpected strings.")
             }
             // /ws/info/
-            def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/").trim()
+            def infoRoute = sh(returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/").trim()
             echo "Integration Test: " + infoRoute
             if (infoRoute.contains("National Parks (Dev)")) {
               echo "Application health successfully validated."
@@ -221,7 +221,7 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withProject("${NAMESPACE_PROD}") {
-              def infoRoute = sh(returnStdout: true, script: "curl -sk https://${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/info/").trim()
+              def infoRoute = sh(returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/info/").trim()
               // Check if the returned string contains Green or Blue
               echo "Route: " + infoRoute
               if (infoRoute.contains("National Parks (Green)")) {
