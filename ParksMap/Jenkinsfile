@@ -145,7 +145,7 @@ pipeline {
               // The DC is set ConfigChange and a new deployment automatically begins
               // when DC is changed so that it's not necessary to use "oc rollout latest is".
               dc.rollout().status("-w")
-              sh "sleep 20"
+              sh "sleep 30"
             }
           }
         }
