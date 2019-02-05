@@ -145,7 +145,6 @@ pipeline {
               // The DC is set ConfigChange and a new deployment automatically begins
               // when DC is changed so that it's not necessary to use "oc rollout latest is".
               dc.rollout().status("-w")
-              sh "sleep 20"
             }
           }
         }
@@ -155,24 +154,26 @@ pipeline {
       steps {
         echo "Running integration tests using curl."
         script {
-          waitUntil() {
-            // /ws/healthz/
-            def healthRoute = sh (returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
-            echo "Integration Test: " + healthRoute
-            if (healthRoute.contains("OK")) {
-              echo "Application health successfully validated."
-              true
-            } else {
-              error("Application health returned unexpected strings.")
-            }
-            // /ws/info/
-            def infoRoute = sh(returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/").trim()
-            echo "Integration Test: " + infoRoute
-            if (infoRoute.contains("MLB Parks (Dev)")) {
-              echo "Application health successfully validated."
-              true
-            } else {
-              error("Application health returned unexpected strings.")
+          timeout(2) {
+            waitUntil() {
+              // /ws/healthz/
+              def healthRoute = sh (returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
+              echo "Integration Test: " + healthRoute
+              if (healthRoute.contains("OK")) {
+                echo "Application health successfully validated."
+              } else {
+                return false
+                //error("Application health returned unexpected strings.")
+              }
+              // /ws/info/
+              def infoRoute = sh(returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/info/").trim()
+              echo "Integration Test: " + infoRoute
+              if (infoRoute.contains("MLB Parks (Dev)")) {
+                echo "Application health successfully validated."
+              } else {
+                return false
+                //error("Application health returned unexpected strings.")
+              }
             }
           }
         }

@@ -145,7 +145,6 @@ pipeline {
               // The DC is set ConfigChange and a new deployment automatically begins
               // when DC is changed so that it's not necessary to use "oc rollout latest is".
               dc.rollout().status("-w")
-              sh "sleep 30"
             }
           }
         }
@@ -155,28 +154,30 @@ pipeline {
       steps {
         echo "Running integration tests using curl."
         script {
-          waitUntil() {
-            // /ws/healthz/
-            def healthRoute = sh (returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
-            echo "Integration Test: " + healthRoute
-            if (healthRoute.contains("OK")) {
-              echo "Application health successfully validated."
-              true
-            } else {
-              error("Application health returned unexpected strings.")
+          timeout(2) {
+            waitUntil() {
+              // /ws/healthz/
+              def healthRoute = sh (returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/healthz/").trim()
+              echo "Integration Test: " + healthRoute
+              if (healthRoute.contains("OK")) {
+                echo "Application health successfully validated."
+              } else {
+                return false
+                //error("Application health returned unexpected strings.")
+              }
+              // /ws/appname/
+              def infoRoute = sh(returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/appname/").trim()
+              echo "Integration Test: " + infoRoute
+              if (infoRoute.contains("ParksMap (Dev)")) {
+                echo "Application health successfully validated."
+              } else {
+                return false
+                //error("Application health returned unexpected strings.")
+              }
+              // Enable if backend services pods are always running.
+              // /ws/backends/list/
+              //sh "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/backends/list/"
             }
-            // /ws/appname/
-            def infoRoute = sh(returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/appname/").trim()
-            echo "Integration Test: " + infoRoute
-            if (infoRoute.contains("ParksMap (Dev)")) {
-              echo "Application health successfully validated."
-              true
-            } else {
-              error("Application health returned unexpected strings.")
-            }
-            // Enable if backend services pods are always running.
-            // /ws/backends/list/
-            //sh "curl -sk https://${APP_NAME}-${NAMESPACE_DEV}.${CLUSTER}/ws/backends/list/"
           }
         }
       }
