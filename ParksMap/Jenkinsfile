@@ -229,10 +229,10 @@ pipeline {
             openshift.withProject("${NAMESPACE_PROD}") {
               timeout(2) {
                 waitUntil() {
-                  def parksMapRoute = sh(returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/appname/").trim()
+                  def infoRoute = sh(returnStdout: true, script: "curl -sk http://${APP_NAME}-${NAMESPACE_PROD}.${CLUSTER}/ws/appname/").trim()
                   // Check if the returned string contains Green or Blue
-                  echo "Route: " + parksMapRoute
-                  if (parksMapRoute.contains("ParksMap (Green)")) {
+                  echo "Route: " + infoRoute
+                  if (infoRoute.contains("ParksMap (Green)")) {
                     echo "Swiching from Green to Blue"
                     // Changing pod replica
                     def dcBlue = openshift.selector("dc", "${APP_NAME}-blue")
